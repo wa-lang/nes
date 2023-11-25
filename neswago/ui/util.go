@@ -16,6 +16,7 @@ import (
 	"path"
 
 	"github.com/fogleman/nes/nes"
+
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
