@@ -4,6 +4,10 @@ run:
 	-@make clean
 	wa run
 
+.PHONY: nesgo
+nesgo:
+	make -C ./nesgo
+
 wasi:
 	-@make clean
 	wa run -target=wasi
