@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
-	"github.com/gordonklaus/portaudio"
 )
 
 const (
@@ -25,16 +24,6 @@ func init() {
 }
 
 func Run(paths []string) {
-	// initialize audio
-	portaudio.Initialize()
-	defer portaudio.Terminate()
-
-	audio := NewAudio()
-	if err := audio.Start(); err != nil {
-		log.Fatalln(err)
-	}
-	defer audio.Stop()
-
 	// initialize glfw
 	if err := glfw.Init(); err != nil {
 		log.Fatalln(err)
@@ -57,6 +46,6 @@ func Run(paths []string) {
 	gl.Enable(gl.TEXTURE_2D)
 
 	// run director
-	director := NewDirector(window, audio)
+	director := NewDirector(window)
 	director.Start(paths)
 }

@@ -16,16 +16,14 @@ type View interface {
 
 type Director struct {
 	window    *glfw.Window
-	audio     *Audio
 	view      View
 	menuView  View
 	timestamp float64
 }
 
-func NewDirector(window *glfw.Window, audio *Audio) *Director {
+func NewDirector(window *glfw.Window) *Director {
 	director := Director{}
 	director.window = window
-	director.audio = audio
 	return &director
 }
 
