@@ -2,9 +2,6 @@
 {
 	"folders": [
 		{"path": "."},
-		//{"path": "../../fogleman/nes"},
-		//{"path": "../../nwidger/nintengo"},
-		//{"path": "../../rbaron/awesomenes"},
 	],
 	"settings": {}
 }
