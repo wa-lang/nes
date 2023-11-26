@@ -119,16 +119,5 @@ func (t *Texture) loadThumbnail(romPath string) image.Image {
 	name = strings.TrimSuffix(name, ".nes")
 	name = strings.Replace(name, "_", " ", -1)
 	name = strings.Title(name)
-	im := CreateGenericThumbnail(name)
-	hash, err := hashFile(romPath)
-	if err != nil {
-		return im
-	}
-	filename := thumbnailPath(hash)
-
-	thumbnail, err := loadPNG(filename)
-	if err != nil {
-		return im
-	}
-	return thumbnail
+	return CreateGenericThumbnail(name)
 }

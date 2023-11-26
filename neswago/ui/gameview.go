@@ -98,13 +98,13 @@ func (view *GameView) onKey(window *glfw.Window,
 		}
 		switch key {
 		case glfw.KeySpace:
-			screenshot(view.console.Buffer())
+			// screenshot(view.console.Buffer())
 		case glfw.KeyR:
 			view.console.Reset()
 		case glfw.KeyTab:
 			if view.record {
 				view.record = false
-				animation(view.frames)
+				// todo: view.frames
 				view.frames = nil
 			} else {
 				view.record = true
