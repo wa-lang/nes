@@ -20,7 +20,7 @@ func init() {
 	runtime.LockOSThread()
 }
 
-func Run(path string) {
+func Main(name string, romBytes []byte) {
 	// initialize glfw
 	if err := glfw.Init(); err != nil {
 		log.Fatalln(err)
@@ -44,5 +44,5 @@ func Run(path string) {
 
 	// run director
 	director := NewDirector(window)
-	director.Start(path)
+	director.Run(name, romBytes)
 }

@@ -16,8 +16,8 @@ type Console struct {
 	RAM         []byte
 }
 
-func NewConsole(path string) (*Console, error) {
-	cartridge, err := LoadNESFile(path)
+func NewConsole(name string, romBytes []byte) (*Console, error) {
+	cartridge, err := LoadNESFile(romBytes)
 	if err != nil {
 		return nil, err
 	}

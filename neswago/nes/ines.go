@@ -1,10 +1,10 @@
 package nes
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
-	"os"
 )
 
 const iNESFileMagic = 0x1a53454e
@@ -22,13 +22,8 @@ type iNESFileHeader struct {
 // LoadNESFile reads an iNES file (.nes) and returns a Cartridge on success.
 // http://wiki.nesdev.com/w/index.php/INES
 // http://nesdev.com/NESDoc.pdf (page 28)
-func LoadNESFile(path string) (*Cartridge, error) {
-	// open file
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
+func LoadNESFile(romBytes []byte) (*Cartridge, error) {
+	file := bytes.NewReader(romBytes)
 
 	// read file header
 	header := iNESFileHeader{}

@@ -20,7 +20,7 @@ type GameView struct {
 	frames   []image.Image
 }
 
-func NewGameView(director *Director, console *nes.Console, title string) View {
+func NewGameView(director *Director, console *nes.Console, title string) *GameView {
 	texture := createTexture()
 	return &GameView{director, console, title, texture, false, nil}
 }
