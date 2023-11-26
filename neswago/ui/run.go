@@ -20,7 +20,7 @@ func init() {
 	runtime.LockOSThread()
 }
 
-func Run(paths []string) {
+func Run(path string) {
 	// initialize glfw
 	if err := glfw.Init(); err != nil {
 		log.Fatalln(err)
@@ -44,5 +44,5 @@ func Run(paths []string) {
 
 	// run director
 	director := NewDirector(window)
-	director.Start(paths)
+	director.Start(path)
 }

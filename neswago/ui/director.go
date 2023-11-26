@@ -17,7 +17,6 @@ type View interface {
 type Director struct {
 	window    *glfw.Window
 	view      View
-	menuView  View
 	timestamp float64
 }
 
@@ -52,13 +51,8 @@ func (d *Director) Step() {
 	}
 }
 
-func (d *Director) Start(paths []string) {
-	d.menuView = NewMenuView(d, paths)
-	if len(paths) == 1 {
-		d.PlayGame(paths[0])
-	} else {
-		d.ShowMenu()
-	}
+func (d *Director) Start(path string) {
+	d.PlayGame(path)
 	d.Run()
 }
 
@@ -77,8 +71,4 @@ func (d *Director) PlayGame(path string) {
 		log.Fatalln(err)
 	}
 	d.SetView(NewGameView(d, console, path))
-}
-
-func (d *Director) ShowMenu() {
-	d.SetView(d.menuView)
 }
