@@ -28,11 +28,8 @@ func NewGameView(director *Director, console *nes.Console, title, hash string) V
 
 func (view *GameView) load(snapshot int) {
 	// load state
-	if err := view.console.LoadState(savePath(view.hash, snapshot)); err == nil {
-		return
-	} else {
-		view.console.Reset()
-	}
+	view.console.Reset()
+
 	// load sram
 	cartridge := view.console.Cartridge
 	if cartridge.Battery != 0 {
@@ -48,8 +45,6 @@ func (view *GameView) save(snapshot int) {
 	if cartridge.Battery != 0 {
 		writeSRAM(sramPath(view.hash, snapshot), cartridge.SRAM)
 	}
-	// save state
-	view.console.SaveState(savePath(view.hash, snapshot))
 }
 
 func (view *GameView) Enter() {

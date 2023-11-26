@@ -1,7 +1,6 @@
 package nes
 
 import (
-	"encoding/gob"
 	"log"
 )
 
@@ -18,20 +17,6 @@ type Mapper225 struct {
 func NewMapper225(cartridge *Cartridge) Mapper {
 	prgBanks := len(cartridge.PRG) / 0x4000
 	return &Mapper225{cartridge, 0, 0, prgBanks - 1}
-}
-
-func (m *Mapper225) Save(encoder *gob.Encoder) error {
-	encoder.Encode(m.chrBank)
-	encoder.Encode(m.prgBank1)
-	encoder.Encode(m.prgBank2)
-	return nil
-}
-
-func (m *Mapper225) Load(decoder *gob.Decoder) error {
-	decoder.Decode(&m.chrBank)
-	decoder.Decode(&m.prgBank1)
-	decoder.Decode(&m.prgBank2)
-	return nil
 }
 
 func (m *Mapper225) Step() {
@@ -58,7 +43,7 @@ func (m *Mapper225) Read(address uint16) byte {
 }
 
 func (m *Mapper225) Write(address uint16, value byte) {
-	if (address < 0x8000) {
+	if address < 0x8000 {
 		return
 	}
 
@@ -66,8 +51,8 @@ func (m *Mapper225) Write(address uint16, value byte) {
 	bank := (A >> 14) & 1
 	m.chrBank = (A & 0x3f) | (bank << 6)
 	prg := ((A >> 6) & 0x3f) | (bank << 6)
-	mode := (A >> 12) & 1;
-	if (mode == 1) {
+	mode := (A >> 12) & 1
+	if mode == 1 {
 		m.prgBank1 = prg
 		m.prgBank2 = prg
 	} else {
@@ -75,7 +60,7 @@ func (m *Mapper225) Write(address uint16, value byte) {
 		m.prgBank2 = prg + 1
 	}
 	mirr := (A >> 13) & 1
-	if (mirr == 1) {
+	if mirr == 1 {
 		m.Cartridge.Mirror = MirrorHorizontal
 	} else {
 		m.Cartridge.Mirror = MirrorVertical

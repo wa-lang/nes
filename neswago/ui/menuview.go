@@ -126,7 +126,6 @@ func (view *MenuView) Exit() {
 
 func (view *MenuView) Update(t, dt float64) {
 	view.checkButtons()
-	view.texture.Purge()
 	window := view.director.window
 	w, h := window.GetFramebufferSize()
 	sx := 256 + margin*2

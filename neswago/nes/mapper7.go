@@ -1,7 +1,6 @@
 package nes
 
 import (
-	"encoding/gob"
 	"log"
 )
 
@@ -12,16 +11,6 @@ type Mapper7 struct {
 
 func NewMapper7(cartridge *Cartridge) Mapper {
 	return &Mapper7{cartridge, 0}
-}
-
-func (m *Mapper7) Save(encoder *gob.Encoder) error {
-	encoder.Encode(m.prgBank)
-	return nil
-}
-
-func (m *Mapper7) Load(decoder *gob.Decoder) error {
-	decoder.Decode(&m.prgBank)
-	return nil
 }
 
 func (m *Mapper7) Step() {

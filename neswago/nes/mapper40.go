@@ -1,7 +1,6 @@
 package nes
 
 import (
-	"encoding/gob"
 	"fmt"
 	"log"
 )
@@ -15,18 +14,6 @@ type Mapper40 struct {
 
 func NewMapper40(console *Console, cartridge *Cartridge) Mapper {
 	return &Mapper40{cartridge, console, 0, 0}
-}
-
-func (m *Mapper40) Save(encoder *gob.Encoder) error {
-	encoder.Encode(m.bank)
-	encoder.Encode(m.cycles)
-	return nil
-}
-
-func (m *Mapper40) Load(decoder *gob.Decoder) error {
-	decoder.Decode(&m.bank)
-	decoder.Decode(&m.cycles)
-	return nil
 }
 
 func (m *Mapper40) Step() {

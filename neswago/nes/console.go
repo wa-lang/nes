@@ -1,11 +1,8 @@
 package nes
 
 import (
-	"encoding/gob"
 	"image"
 	"image/color"
-	"os"
-	"path"
 )
 
 type Console struct {
@@ -87,52 +84,4 @@ func (console *Console) SetButtons1(buttons [8]bool) {
 
 func (console *Console) SetButtons2(buttons [8]bool) {
 	console.Controller2.SetButtons(buttons)
-}
-
-func (console *Console) SaveState(filename string) error {
-	dir, _ := path.Split(filename)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	encoder := gob.NewEncoder(file)
-	return console.Save(encoder)
-}
-
-func (console *Console) Save(encoder *gob.Encoder) error {
-	encoder.Encode(console.RAM)
-	console.CPU.Save(encoder)
-	console.APU.Save(encoder)
-	console.PPU.Save(encoder)
-	console.Cartridge.Save(encoder)
-	console.Mapper.Save(encoder)
-	return encoder.Encode(true)
-}
-
-func (console *Console) LoadState(filename string) error {
-	file, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	decoder := gob.NewDecoder(file)
-	return console.Load(decoder)
-}
-
-func (console *Console) Load(decoder *gob.Decoder) error {
-	decoder.Decode(&console.RAM)
-	console.CPU.Load(decoder)
-	console.APU.Load(decoder)
-	console.PPU.Load(decoder)
-	console.Cartridge.Load(decoder)
-	console.Mapper.Load(decoder)
-	var dummy bool
-	if err := decoder.Decode(&dummy); err != nil {
-		return err
-	}
-	return nil
 }

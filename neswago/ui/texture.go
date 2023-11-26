@@ -2,9 +2,6 @@ package ui
 
 import (
 	"image"
-	"io"
-	"net/http"
-	"os"
 	"path"
 	"strings"
 
@@ -15,13 +12,17 @@ const textureSize = 4096
 const textureDim = textureSize / 256
 const textureCount = textureDim * textureDim
 
+type _PathIndexPair struct {
+	Path  string
+	Index int
+}
+
 type Texture struct {
 	texture uint32
-	lookup  map[string]int
+	lookup  []_PathIndexPair
 	reverse [textureCount]string
 	access  [textureCount]int
 	counter int
-	ch      chan string
 }
 
 func NewTexture() *Texture {
@@ -34,20 +35,7 @@ func NewTexture() *Texture {
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 	t := Texture{}
 	t.texture = texture
-	t.lookup = make(map[string]int)
-	t.ch = make(chan string, 1024)
 	return &t
-}
-
-func (t *Texture) Purge() {
-	for {
-		select {
-		case path := <-t.ch:
-			delete(t.lookup, path)
-		default:
-			return
-		}
-	}
 }
 
 func (t *Texture) Bind() {
@@ -59,10 +47,29 @@ func (t *Texture) Unbind() {
 }
 
 func (t *Texture) Lookup(path string) (x, y, dx, dy float32) {
-	if index, ok := t.lookup[path]; ok {
-		return t.coord(index)
-	} else {
-		return t.coord(t.load(path))
+	for i := 0; i < len(t.lookup); i++ {
+		if t.lookup[i].Path == path {
+			index := t.lookup[i].Index
+			return t.coord(index)
+		}
+	}
+	return t.coord(t.load(path))
+}
+
+func (t *Texture) addLookpath(path string, index int) {
+	t.lookup = append(t.lookup, _PathIndexPair{
+		path, index,
+	})
+}
+
+func (t *Texture) delLookpath(path string) {
+	for i := 0; i < len(t.lookup); i++ {
+		if t.lookup[i].Path == path {
+			lastIdx := len(t.lookup) - 1
+			t.lookup[i] = t.lookup[lastIdx]
+			t.lookup = t.lookup[:lastIdx]
+			return
+		}
 	}
 }
 
@@ -93,9 +100,9 @@ func (t *Texture) coord(index int) (x, y, dx, dy float32) {
 
 func (t *Texture) load(path string) int {
 	index := t.lru()
-	delete(t.lookup, t.reverse[index])
+	t.delLookpath(t.reverse[index])
 	t.mark(index)
-	t.lookup[path] = index
+	t.addLookpath(path, index)
 	t.reverse[index] = path
 	x := int32((index % textureDim) * 256)
 	y := int32((index / textureDim) * 256)
@@ -118,44 +125,10 @@ func (t *Texture) loadThumbnail(romPath string) image.Image {
 		return im
 	}
 	filename := thumbnailPath(hash)
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		go t.downloadThumbnail(romPath, hash)
+
+	thumbnail, err := loadPNG(filename)
+	if err != nil {
 		return im
-	} else {
-		thumbnail, err := loadPNG(filename)
-		if err != nil {
-			return im
-		}
-		return thumbnail
 	}
-}
-
-func (t *Texture) downloadThumbnail(romPath, hash string) error {
-	url := thumbnailURL(hash)
-	filename := thumbnailPath(hash)
-	dir, _ := path.Split(filename)
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
-
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	if _, err := io.Copy(file, resp.Body); err != nil {
-		return err
-	}
-
-	t.ch <- romPath
-
-	return nil
+	return thumbnail
 }
