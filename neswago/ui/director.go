@@ -72,15 +72,11 @@ func (d *Director) Run() {
 }
 
 func (d *Director) PlayGame(path string) {
-	hash, err := hashFile(path)
-	if err != nil {
-		log.Fatalln(err)
-	}
 	console, err := nes.NewConsole(path)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	d.SetView(NewGameView(d, console, path, hash))
+	d.SetView(NewGameView(d, console, path))
 }
 
 func (d *Director) ShowMenu() {

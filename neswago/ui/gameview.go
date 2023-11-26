@@ -15,48 +15,24 @@ type GameView struct {
 	director *Director
 	console  *nes.Console
 	title    string
-	hash     string
 	texture  uint32
 	record   bool
 	frames   []image.Image
 }
 
-func NewGameView(director *Director, console *nes.Console, title, hash string) View {
+func NewGameView(director *Director, console *nes.Console, title string) View {
 	texture := createTexture()
-	return &GameView{director, console, title, hash, texture, false, nil}
-}
-
-func (view *GameView) load(snapshot int) {
-	// load state
-	view.console.Reset()
-
-	// load sram
-	cartridge := view.console.Cartridge
-	if cartridge.Battery != 0 {
-		if sram, err := readSRAM(sramPath(view.hash, snapshot)); err == nil {
-			cartridge.SRAM = sram
-		}
-	}
-}
-
-func (view *GameView) save(snapshot int) {
-	// save sram
-	cartridge := view.console.Cartridge
-	if cartridge.Battery != 0 {
-		writeSRAM(sramPath(view.hash, snapshot), cartridge.SRAM)
-	}
+	return &GameView{director, console, title, texture, false, nil}
 }
 
 func (view *GameView) Enter() {
 	gl.ClearColor(0, 0, 0, 1)
 	view.director.SetTitle(view.title)
 	view.director.window.SetKeyCallback(view.onKey)
-	view.load(-1)
 }
 
 func (view *GameView) Exit() {
 	view.director.window.SetKeyCallback(nil)
-	view.save(-1)
 }
 
 func (view *GameView) Update(t, dt float64) {
@@ -89,11 +65,11 @@ func (view *GameView) onKey(window *glfw.Window,
 	key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if action == glfw.Press {
 		if key >= glfw.Key0 && key <= glfw.Key9 {
-			snapshot := int(key - glfw.Key0)
+			// snapshot := int(key - glfw.Key0)
 			if mods&glfw.ModShift == 0 {
-				view.load(snapshot)
+				// view.load(snapshot)
 			} else {
-				view.save(snapshot)
+				// view.save(snapshot)
 			}
 		}
 		switch key {
