@@ -2,7 +2,6 @@ package nes
 
 import (
 	"image"
-	colorpkg "image/color"
 )
 
 type PPU struct {
@@ -467,7 +466,7 @@ func (ppu *PPU) renderPixel() {
 		}
 	}
 	c := Palette[ppu.readPalette(uint16(color))%64]
-	ppu.back.SetRGBA(x, y, colorpkg.RGBA{c.R, c.G, c.B, c.A})
+	ppu.back.SetRGBA(x, y, c)
 }
 
 func (ppu *PPU) fetchSpritePattern(i, row int) uint32 {

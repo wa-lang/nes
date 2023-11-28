@@ -3,14 +3,15 @@ package nes
 import (
 	"errors"
 	"log"
+	"unsafe"
 )
-
-type color_RGBA struct {
-	R, G, B, A uint8
-}
 
 func byte2str(x byte) string {
 	return string(x)
+}
+
+func raw(hdr []iNESFileHeader) []byte {
+	return (*(*[1 << 20]byte)(unsafe.Pointer(&hdr[0])))[:unsafe.Sizeof(hdr[0])]
 }
 
 func log_Fatalf(format string, x uint16) {
