@@ -1,10 +1,5 @@
 package nes
 
-import (
-	"fmt"
-	"log"
-)
-
 type Mapper40 struct {
 	*Cartridge
 	console *Console
@@ -42,7 +37,7 @@ func (m *Mapper40) Read(address uint16) byte {
 	case address >= 0xe000:
 		return m.PRG[address-0xe000+0x2000*7]
 	default:
-		log.Fatalf("unhandled mapper40 read at address: 0x%04X", address)
+		log_Fatalf("unhandled mapper40 read at address: 0x%04X", address)
 	}
 	return 0
 }
@@ -58,7 +53,6 @@ func (m *Mapper40) Write(address uint16, value byte) {
 	case address >= 0xe000:
 		m.bank = int(value)
 	default:
-		// log.Fatalf("unhandled mapper40 write at address: 0x%04X", address)
-		fmt.Printf("unhandled mapper40 write at address: 0x%04X\n", address)
+		log_Fatalf("unhandled mapper40 write at address: 0x%04X", address)
 	}
 }

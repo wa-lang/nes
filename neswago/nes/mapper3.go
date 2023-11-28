@@ -1,9 +1,5 @@
 package nes
 
-import (
-	"log"
-)
-
 type Mapper3 struct {
 	*Cartridge
 	chrBank  int
@@ -34,7 +30,7 @@ func (m *Mapper3) Read(address uint16) byte {
 		index := int(address) - 0x6000
 		return m.SRAM[index]
 	default:
-		log.Fatalf("unhandled mapper3 read at address: 0x%04X", address)
+		log_Fatalf("unhandled mapper3 read at address: 0x%04X", address)
 	}
 	return 0
 }
@@ -50,6 +46,6 @@ func (m *Mapper3) Write(address uint16, value byte) {
 		index := int(address) - 0x6000
 		m.SRAM[index] = value
 	default:
-		log.Fatalf("unhandled mapper3 write at address: 0x%04X", address)
+		log_Fatalf("unhandled mapper3 write at address: 0x%04X", address)
 	}
 }

@@ -36,7 +36,7 @@ func (mem *cpuMemory) Read(address uint16) byte {
 	case address >= 0x6000:
 		return mem.console.Mapper.Read(address)
 	default:
-		log.Fatalf("unhandled cpu memory read at address: 0x%04X", address)
+		log_Fatalf("unhandled cpu memory read at address: 0x%04X", address)
 	}
 	return 0
 }

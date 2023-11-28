@@ -1,6 +1,7 @@
 package nes
 
-import "math"
+// https://oeis.org/A000796
+const math_Pi = 3.14159265358979323846264338327950288419716939937510582097494459
 
 type Filter interface {
 	Step(x float32) float32
@@ -26,7 +27,7 @@ func (f *FirstOrderFilter) Step(x float32) float32 {
 // sampleRate: samples per second
 // cutoffFreq: oscillations per second
 func LowPassFilter(sampleRate float32, cutoffFreq float32) Filter {
-	c := sampleRate / math.Pi / cutoffFreq
+	c := sampleRate / math_Pi / cutoffFreq
 	a0i := 1 / (1 + c)
 	return &FirstOrderFilter{
 		B0: a0i,
@@ -36,7 +37,7 @@ func LowPassFilter(sampleRate float32, cutoffFreq float32) Filter {
 }
 
 func HighPassFilter(sampleRate float32, cutoffFreq float32) Filter {
-	c := sampleRate / math.Pi / cutoffFreq
+	c := sampleRate / math_Pi / cutoffFreq
 	a0i := 1 / (1 + c)
 	return &FirstOrderFilter{
 		B0: c * a0i,

@@ -1,9 +1,5 @@
 package nes
 
-import (
-	"log"
-)
-
 // https://github.com/asfdfdfd/fceux/blob/master/src/boards/225.cpp
 // https://wiki.nesdev.com/w/index.php/INES_Mapper_225
 
@@ -37,7 +33,7 @@ func (m *Mapper225) Read(address uint16) byte {
 		index := int(address) - 0x6000
 		return m.SRAM[index]
 	default:
-		log.Fatalf("unhandled Mapper225 read at address: 0x%04X", address)
+		log_Fatalf("unhandled Mapper225 read at address: 0x%04X", address)
 	}
 	return 0
 }

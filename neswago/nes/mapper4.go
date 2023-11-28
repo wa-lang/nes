@@ -1,9 +1,5 @@
 package nes
 
-import (
-	"log"
-)
-
 type Mapper4 struct {
 	*Cartridge
 	console    *Console
@@ -66,7 +62,7 @@ func (m *Mapper4) Read(address uint16) byte {
 	case address >= 0x6000:
 		return m.SRAM[int(address)-0x6000]
 	default:
-		log.Fatalf("unhandled mapper4 read at address: 0x%04X", address)
+		log_Fatalf("unhandled mapper4 read at address: 0x%04X", address)
 	}
 	return 0
 }
@@ -82,7 +78,7 @@ func (m *Mapper4) Write(address uint16, value byte) {
 	case address >= 0x6000:
 		m.SRAM[int(address)-0x6000] = value
 	default:
-		log.Fatalf("unhandled mapper4 write at address: 0x%04X", address)
+		log_Fatalf("unhandled mapper4 write at address: 0x%04X", address)
 	}
 }
 

@@ -1,8 +1,6 @@
 package nes
 
-import (
-	"fmt"
-)
+import "errors"
 
 type Mapper interface {
 	Read(address uint16) byte
@@ -30,6 +28,6 @@ func NewMapper(console *Console) (Mapper, error) {
 	case 225:
 		return NewMapper225(cartridge), nil
 	}
-	err := fmt.Errorf("unsupported mapper: %d", cartridge.Mapper)
+	err := errors.New("unsupported mapper: " + byte2str(cartridge.Mapper))
 	return nil, err
 }
