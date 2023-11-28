@@ -13,7 +13,7 @@ type iNESFileHeader struct {
 }
 
 func readNESFileHeader(buf []byte, hdr *iNESFileHeader) (int, error) {
-	var arr = make([]iNESFileHeader, 1, 1)
+	arr := make([]iNESFileHeader, 1, 1)
 	b := raw(arr)
 	n := len(b)
 

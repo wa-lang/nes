@@ -1,0 +1,14 @@
+import "errors"
+import "strconv"
+
+func byte2str(x: byte) => string {
+	return string(x)
+}
+
+func log_Fatalf(format: string, x: u16) {
+	panic(format + strconv.Itoa(int(x)))
+}
+
+func errors_New(s: string) => error {
+	return errors.New(s)
+}

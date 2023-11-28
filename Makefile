@@ -4,6 +4,15 @@ run:
 	-@make clean
 	wa run
 
+.PHONY: neswa
+neswa:
+	-rm -rf ././src/nes
+	make -C ./neswago/nes
+	mv ./neswago/nes/output ./src/nes
+	-rm ./src/nes/zz_helper.wa
+	cp zz_helper.wa.txt ./src/nes/zz_helper.wa
+	#wa run -target=wasi
+
 .PHONY: nesgo
 nesgo:
 	make -C ./nesgo
