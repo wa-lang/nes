@@ -2,7 +2,6 @@ package ui
 
 import (
 	"image"
-	"image/draw"
 
 	"github.com/fogleman/nes/nes"
 
@@ -96,10 +95,4 @@ func setTexture(im *image.RGBA) {
 	gl.TexImage2D(
 		gl.TEXTURE_2D, 0, gl.RGBA, int32(size.X), int32(size.Y),
 		0, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(im.Pix))
-}
-
-func copyImage(src image.Image) *image.RGBA {
-	dst := image.NewRGBA(src.Bounds())
-	draw.Draw(dst, dst.Rect, src, image.ZP, draw.Src)
-	return dst
 }

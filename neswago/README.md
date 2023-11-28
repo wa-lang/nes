@@ -7,15 +7,7 @@
   - 已经去掉 chan/map 依赖
 - 11月26日, 去掉游戏选择视图
   - 4000+ 行代码(减少300行), 启动参数指定游戏
-- 11月28日, 去掉 fmt/log/math 依赖
-  - 3660+ 行代码(减少300行)
+- 11月28日, 去掉 fmt/log/math 依赖, 可生成 wa 代码
+  - 3600 行代码(减少400行)
 - TODO
-  - 去掉 文件系统 依赖
-  - 去掉 gl 依赖(最后)
-  - 支持 `import "fmt"`
-  - 支持 `import "encoding/binary"`
-  - 支持 `import "image"`
-  - 支持 `import "image/color"`
-  - 支持 `import "log"`
-  - 支持 `import "os"`
-
+  - wa build 编译崩溃
