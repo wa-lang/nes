@@ -1,5 +1,7 @@
 // 版权 @2023 nes-wa 作者。保留所有权利。
 
+import "myapp/nes" => _
+
 func main {
 	println("你好，凹语言！")
 	println(sum(100))
