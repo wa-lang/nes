@@ -53,32 +53,31 @@ type APU struct {
 	framePeriod byte
 	frameValue  byte
 	frameIRQ    bool
-	filterChain FilterChain
 }
 
 func NewAPU(console *Console) *APU {
-	apu := APU{}
-	apu.console = console
-	apu.noise.shiftRegister = 1
-	apu.pulse1.channel = 1
-	apu.pulse2.channel = 2
-	apu.framePeriod = 4
-	apu.dmc.cpu = console.CPU
-	return &apu
+	this := &APU{}
+	this.console = console
+	this.noise.shiftRegister = 1
+	this.pulse1.channel = 1
+	this.pulse2.channel = 2
+	this.framePeriod = 4
+	this.dmc.cpu = console.CPU
+	return this
 }
 
-func (apu *APU) Step() {
-	cycle1 := apu.cycle
-	apu.cycle++
-	cycle2 := apu.cycle
-	apu.stepTimer()
+func (this *APU) Step() {
+	cycle1 := this.cycle
+	this.cycle++
+	cycle2 := this.cycle
+	this.stepTimer()
 	f1 := int(float64(cycle1) / frameCounterRate)
 	f2 := int(float64(cycle2) / frameCounterRate)
 	if f1 != f2 {
-		apu.stepFrameCounter()
+		this.stepFrameCounter()
 	}
-	s1 := int(float64(cycle1) / apu.sampleRate)
-	s2 := int(float64(cycle2) / apu.sampleRate)
+	s1 := int(float64(cycle1) / this.sampleRate)
+	s2 := int(float64(cycle2) / this.sampleRate)
 	if s1 != s2 {
 		// todo 发送数据
 	}
@@ -89,185 +88,185 @@ func (apu *APU) Step() {
 //   - - - f    - - - - -    IRQ (if bit 6 is clear)
 //   - l - l    l - l - -    Length counter and sweep
 //     e e e e    e e e e -    Envelope and linear counter
-func (apu *APU) stepFrameCounter() {
-	switch apu.framePeriod {
+func (this *APU) stepFrameCounter() {
+	switch this.framePeriod {
 	case 4:
-		apu.frameValue = (apu.frameValue + 1) % 4
-		switch apu.frameValue {
+		this.frameValue = (this.frameValue + 1) % 4
+		switch this.frameValue {
 		case 0, 2:
-			apu.stepEnvelope()
+			this.stepEnvelope()
 		case 1:
-			apu.stepEnvelope()
-			apu.stepSweep()
-			apu.stepLength()
+			this.stepEnvelope()
+			this.stepSweep()
+			this.stepLength()
 		case 3:
-			apu.stepEnvelope()
-			apu.stepSweep()
-			apu.stepLength()
-			apu.fireIRQ()
+			this.stepEnvelope()
+			this.stepSweep()
+			this.stepLength()
+			this.fireIRQ()
 		}
 	case 5:
-		apu.frameValue = (apu.frameValue + 1) % 5
-		switch apu.frameValue {
+		this.frameValue = (this.frameValue + 1) % 5
+		switch this.frameValue {
 		case 0, 2:
-			apu.stepEnvelope()
+			this.stepEnvelope()
 		case 1, 3:
-			apu.stepEnvelope()
-			apu.stepSweep()
-			apu.stepLength()
+			this.stepEnvelope()
+			this.stepSweep()
+			this.stepLength()
 		}
 	}
 }
 
-func (apu *APU) stepTimer() {
-	if apu.cycle%2 == 0 {
-		apu.pulse1.stepTimer()
-		apu.pulse2.stepTimer()
-		apu.noise.stepTimer()
-		apu.dmc.stepTimer()
+func (this *APU) stepTimer() {
+	if this.cycle%2 == 0 {
+		this.pulse1.stepTimer()
+		this.pulse2.stepTimer()
+		this.noise.stepTimer()
+		this.dmc.stepTimer()
 	}
-	apu.triangle.stepTimer()
+	this.triangle.stepTimer()
 }
 
-func (apu *APU) stepEnvelope() {
-	apu.pulse1.stepEnvelope()
-	apu.pulse2.stepEnvelope()
-	apu.triangle.stepCounter()
-	apu.noise.stepEnvelope()
+func (this *APU) stepEnvelope() {
+	this.pulse1.stepEnvelope()
+	this.pulse2.stepEnvelope()
+	this.triangle.stepCounter()
+	this.noise.stepEnvelope()
 }
 
-func (apu *APU) stepSweep() {
-	apu.pulse1.stepSweep()
-	apu.pulse2.stepSweep()
+func (this *APU) stepSweep() {
+	this.pulse1.stepSweep()
+	this.pulse2.stepSweep()
 }
 
-func (apu *APU) stepLength() {
-	apu.pulse1.stepLength()
-	apu.pulse2.stepLength()
-	apu.triangle.stepLength()
-	apu.noise.stepLength()
+func (this *APU) stepLength() {
+	this.pulse1.stepLength()
+	this.pulse2.stepLength()
+	this.triangle.stepLength()
+	this.noise.stepLength()
 }
 
-func (apu *APU) fireIRQ() {
-	if apu.frameIRQ {
-		apu.console.CPU.triggerIRQ()
+func (this *APU) fireIRQ() {
+	if this.frameIRQ {
+		this.console.CPU.triggerIRQ()
 	}
 }
 
-func (apu *APU) readRegister(address uint16) byte {
+func (this *APU) readRegister(address uint16) byte {
 	switch address {
 	case 0x4015:
-		return apu.readStatus()
+		return this.readStatus()
 		// default:
 		// 	log.Fatalf("unhandled apu register read at address: 0x%04X", address)
 	}
 	return 0
 }
 
-func (apu *APU) writeRegister(address uint16, value byte) {
+func (this *APU) writeRegister(address uint16, value byte) {
 	switch address {
 	case 0x4000:
-		apu.pulse1.writeControl(value)
+		this.pulse1.writeControl(value)
 	case 0x4001:
-		apu.pulse1.writeSweep(value)
+		this.pulse1.writeSweep(value)
 	case 0x4002:
-		apu.pulse1.writeTimerLow(value)
+		this.pulse1.writeTimerLow(value)
 	case 0x4003:
-		apu.pulse1.writeTimerHigh(value)
+		this.pulse1.writeTimerHigh(value)
 	case 0x4004:
-		apu.pulse2.writeControl(value)
+		this.pulse2.writeControl(value)
 	case 0x4005:
-		apu.pulse2.writeSweep(value)
+		this.pulse2.writeSweep(value)
 	case 0x4006:
-		apu.pulse2.writeTimerLow(value)
+		this.pulse2.writeTimerLow(value)
 	case 0x4007:
-		apu.pulse2.writeTimerHigh(value)
+		this.pulse2.writeTimerHigh(value)
 	case 0x4008:
-		apu.triangle.writeControl(value)
+		this.triangle.writeControl(value)
 	case 0x4009:
 	case 0x4010:
-		apu.dmc.writeControl(value)
+		this.dmc.writeControl(value)
 	case 0x4011:
-		apu.dmc.writeValue(value)
+		this.dmc.writeValue(value)
 	case 0x4012:
-		apu.dmc.writeAddress(value)
+		this.dmc.writeAddress(value)
 	case 0x4013:
-		apu.dmc.writeLength(value)
+		this.dmc.writeLength(value)
 	case 0x400A:
-		apu.triangle.writeTimerLow(value)
+		this.triangle.writeTimerLow(value)
 	case 0x400B:
-		apu.triangle.writeTimerHigh(value)
+		this.triangle.writeTimerHigh(value)
 	case 0x400C:
-		apu.noise.writeControl(value)
+		this.noise.writeControl(value)
 	case 0x400D:
 	case 0x400E:
-		apu.noise.writePeriod(value)
+		this.noise.writePeriod(value)
 	case 0x400F:
-		apu.noise.writeLength(value)
+		this.noise.writeLength(value)
 	case 0x4015:
-		apu.writeControl(value)
+		this.writeControl(value)
 	case 0x4017:
-		apu.writeFrameCounter(value)
+		this.writeFrameCounter(value)
 		// default:
 		// 	log.Fatalf("unhandled apu register write at address: 0x%04X", address)
 	}
 }
 
-func (apu *APU) readStatus() byte {
+func (this *APU) readStatus() byte {
 	var result byte
-	if apu.pulse1.lengthValue > 0 {
+	if this.pulse1.lengthValue > 0 {
 		result |= 1
 	}
-	if apu.pulse2.lengthValue > 0 {
+	if this.pulse2.lengthValue > 0 {
 		result |= 2
 	}
-	if apu.triangle.lengthValue > 0 {
+	if this.triangle.lengthValue > 0 {
 		result |= 4
 	}
-	if apu.noise.lengthValue > 0 {
+	if this.noise.lengthValue > 0 {
 		result |= 8
 	}
-	if apu.dmc.currentLength > 0 {
+	if this.dmc.currentLength > 0 {
 		result |= 16
 	}
 	return result
 }
 
-func (apu *APU) writeControl(value byte) {
-	apu.pulse1.enabled = value&1 == 1
-	apu.pulse2.enabled = value&2 == 2
-	apu.triangle.enabled = value&4 == 4
-	apu.noise.enabled = value&8 == 8
-	apu.dmc.enabled = value&16 == 16
-	if !apu.pulse1.enabled {
-		apu.pulse1.lengthValue = 0
+func (this *APU) writeControl(value byte) {
+	this.pulse1.enabled = value&1 == 1
+	this.pulse2.enabled = value&2 == 2
+	this.triangle.enabled = value&4 == 4
+	this.noise.enabled = value&8 == 8
+	this.dmc.enabled = value&16 == 16
+	if !this.pulse1.enabled {
+		this.pulse1.lengthValue = 0
 	}
-	if !apu.pulse2.enabled {
-		apu.pulse2.lengthValue = 0
+	if !this.pulse2.enabled {
+		this.pulse2.lengthValue = 0
 	}
-	if !apu.triangle.enabled {
-		apu.triangle.lengthValue = 0
+	if !this.triangle.enabled {
+		this.triangle.lengthValue = 0
 	}
-	if !apu.noise.enabled {
-		apu.noise.lengthValue = 0
+	if !this.noise.enabled {
+		this.noise.lengthValue = 0
 	}
-	if !apu.dmc.enabled {
-		apu.dmc.currentLength = 0
+	if !this.dmc.enabled {
+		this.dmc.currentLength = 0
 	} else {
-		if apu.dmc.currentLength == 0 {
-			apu.dmc.restart()
+		if this.dmc.currentLength == 0 {
+			this.dmc.restart()
 		}
 	}
 }
 
-func (apu *APU) writeFrameCounter(value byte) {
-	apu.framePeriod = 4 + (value>>7)&1
-	apu.frameIRQ = (value>>6)&1 == 0
-	// apu.frameValue = 0
-	if apu.framePeriod == 5 {
-		apu.stepEnvelope()
-		apu.stepSweep()
-		apu.stepLength()
+func (this *APU) writeFrameCounter(value byte) {
+	this.framePeriod = 4 + (value>>7)&1
+	this.frameIRQ = (value>>6)&1 == 0
+	// this.frameValue = 0
+	if this.framePeriod == 5 {
+		this.stepEnvelope()
+		this.stepSweep()
+		this.stepLength()
 	}
 }
 
@@ -401,64 +400,64 @@ type Triangle struct {
 	counterReload bool
 }
 
-func (t *Triangle) writeControl(value byte) {
-	t.lengthEnabled = (value>>7)&1 == 0
-	t.counterPeriod = value & 0x7F
+func (this *Triangle) writeControl(value byte) {
+	this.lengthEnabled = (value>>7)&1 == 0
+	this.counterPeriod = value & 0x7F
 }
 
-func (t *Triangle) writeTimerLow(value byte) {
-	t.timerPeriod = (t.timerPeriod & 0xFF00) | uint16(value)
+func (this *Triangle) writeTimerLow(value byte) {
+	this.timerPeriod = (this.timerPeriod & 0xFF00) | uint16(value)
 }
 
-func (t *Triangle) writeTimerHigh(value byte) {
-	t.lengthValue = lengthTable[value>>3]
-	t.timerPeriod = (t.timerPeriod & 0x00FF) | (uint16(value&7) << 8)
-	t.timerValue = t.timerPeriod
-	t.counterReload = true
+func (this *Triangle) writeTimerHigh(value byte) {
+	this.lengthValue = lengthTable[value>>3]
+	this.timerPeriod = (this.timerPeriod & 0x00FF) | (uint16(value&7) << 8)
+	this.timerValue = this.timerPeriod
+	this.counterReload = true
 }
 
-func (t *Triangle) stepTimer() {
-	if t.timerValue == 0 {
-		t.timerValue = t.timerPeriod
-		if t.lengthValue > 0 && t.counterValue > 0 {
-			t.dutyValue = (t.dutyValue + 1) % 32
+func (this *Triangle) stepTimer() {
+	if this.timerValue == 0 {
+		this.timerValue = this.timerPeriod
+		if this.lengthValue > 0 && this.counterValue > 0 {
+			this.dutyValue = (this.dutyValue + 1) % 32
 		}
 	} else {
-		t.timerValue--
+		this.timerValue--
 	}
 }
 
-func (t *Triangle) stepLength() {
-	if t.lengthEnabled && t.lengthValue > 0 {
-		t.lengthValue--
+func (this *Triangle) stepLength() {
+	if this.lengthEnabled && this.lengthValue > 0 {
+		this.lengthValue--
 	}
 }
 
-func (t *Triangle) stepCounter() {
-	if t.counterReload {
-		t.counterValue = t.counterPeriod
-	} else if t.counterValue > 0 {
-		t.counterValue--
+func (this *Triangle) stepCounter() {
+	if this.counterReload {
+		this.counterValue = this.counterPeriod
+	} else if this.counterValue > 0 {
+		this.counterValue--
 	}
-	if t.lengthEnabled {
-		t.counterReload = false
+	if this.lengthEnabled {
+		this.counterReload = false
 	}
 }
 
-func (t *Triangle) output() byte {
-	if !t.enabled {
+func (this *Triangle) output() byte {
+	if !this.enabled {
 		return 0
 	}
-	if t.timerPeriod < 3 {
+	if this.timerPeriod < 3 {
 		return 0
 	}
-	if t.lengthValue == 0 {
+	if this.lengthValue == 0 {
 		return 0
 	}
-	if t.counterValue == 0 {
+	if this.counterValue == 0 {
 		return 0
 	}
-	return triangleTable[t.dutyValue]
+	return triangleTable[this.dutyValue]
 }
 
 // Noise
@@ -480,63 +479,63 @@ type Noise struct {
 	constantVolume  byte
 }
 
-func (n *Noise) writeControl(value byte) {
-	n.lengthEnabled = (value>>5)&1 == 0
-	n.envelopeLoop = (value>>5)&1 == 1
-	n.envelopeEnabled = (value>>4)&1 == 0
-	n.envelopePeriod = value & 15
-	n.constantVolume = value & 15
-	n.envelopeStart = true
+func (this *Noise) writeControl(value byte) {
+	this.lengthEnabled = (value>>5)&1 == 0
+	this.envelopeLoop = (value>>5)&1 == 1
+	this.envelopeEnabled = (value>>4)&1 == 0
+	this.envelopePeriod = value & 15
+	this.constantVolume = value & 15
+	this.envelopeStart = true
 }
 
-func (n *Noise) writePeriod(value byte) {
-	n.mode = value&0x80 == 0x80
-	n.timerPeriod = noiseTable[value&0x0F]
+func (this *Noise) writePeriod(value byte) {
+	this.mode = value&0x80 == 0x80
+	this.timerPeriod = noiseTable[value&0x0F]
 }
 
-func (n *Noise) writeLength(value byte) {
-	n.lengthValue = lengthTable[value>>3]
-	n.envelopeStart = true
+func (this *Noise) writeLength(value byte) {
+	this.lengthValue = lengthTable[value>>3]
+	this.envelopeStart = true
 }
 
-func (n *Noise) stepTimer() {
-	if n.timerValue == 0 {
-		n.timerValue = n.timerPeriod
+func (this *Noise) stepTimer() {
+	if this.timerValue == 0 {
+		this.timerValue = this.timerPeriod
 		var shift byte
-		if n.mode {
+		if this.mode {
 			shift = 6
 		} else {
 			shift = 1
 		}
-		b1 := n.shiftRegister & 1
-		b2 := (n.shiftRegister >> shift) & 1
-		n.shiftRegister >>= 1
-		n.shiftRegister |= (b1 ^ b2) << 14
+		b1 := this.shiftRegister & 1
+		b2 := (this.shiftRegister >> shift) & 1
+		this.shiftRegister >>= 1
+		this.shiftRegister |= (b1 ^ b2) << 14
 	} else {
-		n.timerValue--
+		this.timerValue--
 	}
 }
 
-func (n *Noise) stepEnvelope() {
-	if n.envelopeStart {
-		n.envelopeVolume = 15
-		n.envelopeValue = n.envelopePeriod
-		n.envelopeStart = false
-	} else if n.envelopeValue > 0 {
-		n.envelopeValue--
+func (this *Noise) stepEnvelope() {
+	if this.envelopeStart {
+		this.envelopeVolume = 15
+		this.envelopeValue = this.envelopePeriod
+		this.envelopeStart = false
+	} else if this.envelopeValue > 0 {
+		this.envelopeValue--
 	} else {
-		if n.envelopeVolume > 0 {
-			n.envelopeVolume--
-		} else if n.envelopeLoop {
-			n.envelopeVolume = 15
+		if this.envelopeVolume > 0 {
+			this.envelopeVolume--
+		} else if this.envelopeLoop {
+			this.envelopeVolume = 15
 		}
-		n.envelopeValue = n.envelopePeriod
+		this.envelopeValue = this.envelopePeriod
 	}
 }
 
-func (n *Noise) stepLength() {
-	if n.lengthEnabled && n.lengthValue > 0 {
-		n.lengthValue--
+func (this *Noise) stepLength() {
+	if this.lengthEnabled && this.lengthValue > 0 {
+		this.lengthValue--
 	}
 }
 
@@ -558,77 +557,77 @@ type DMC struct {
 	irq            bool
 }
 
-func (d *DMC) writeControl(value byte) {
-	d.irq = value&0x80 == 0x80
-	d.loop = value&0x40 == 0x40
-	d.tickPeriod = dmcTable[value&0x0F]
+func (this *DMC) writeControl(value byte) {
+	this.irq = value&0x80 == 0x80
+	this.loop = value&0x40 == 0x40
+	this.tickPeriod = dmcTable[value&0x0F]
 }
 
-func (d *DMC) writeValue(value byte) {
-	d.value = value & 0x7F
+func (this *DMC) writeValue(value byte) {
+	this.value = value & 0x7F
 }
 
-func (d *DMC) writeAddress(value byte) {
+func (this *DMC) writeAddress(value byte) {
 	// Sample address = %11AAAAAA.AA000000
-	d.sampleAddress = 0xC000 | (uint16(value) << 6)
+	this.sampleAddress = 0xC000 | (uint16(value) << 6)
 }
 
-func (d *DMC) writeLength(value byte) {
+func (this *DMC) writeLength(value byte) {
 	// Sample length = %0000LLLL.LLLL0001
-	d.sampleLength = (uint16(value) << 4) | 1
+	this.sampleLength = (uint16(value) << 4) | 1
 }
 
-func (d *DMC) restart() {
-	d.currentAddress = d.sampleAddress
-	d.currentLength = d.sampleLength
+func (this *DMC) restart() {
+	this.currentAddress = this.sampleAddress
+	this.currentLength = this.sampleLength
 }
 
-func (d *DMC) stepTimer() {
-	if !d.enabled {
+func (this *DMC) stepTimer() {
+	if !this.enabled {
 		return
 	}
-	d.stepReader()
-	if d.tickValue == 0 {
-		d.tickValue = d.tickPeriod
-		d.stepShifter()
+	this.stepReader()
+	if this.tickValue == 0 {
+		this.tickValue = this.tickPeriod
+		this.stepShifter()
 	} else {
-		d.tickValue--
+		this.tickValue--
 	}
 }
 
-func (d *DMC) stepReader() {
-	if d.currentLength > 0 && d.bitCount == 0 {
-		d.cpu.stall += 4
-		d.shiftRegister = d.cpu.Read(d.currentAddress)
-		d.bitCount = 8
-		d.currentAddress++
-		if d.currentAddress == 0 {
-			d.currentAddress = 0x8000
+func (this *DMC) stepReader() {
+	if this.currentLength > 0 && this.bitCount == 0 {
+		this.cpu.stall += 4
+		this.shiftRegister = this.cpu.Read(this.currentAddress)
+		this.bitCount = 8
+		this.currentAddress++
+		if this.currentAddress == 0 {
+			this.currentAddress = 0x8000
 		}
-		d.currentLength--
-		if d.currentLength == 0 && d.loop {
-			d.restart()
+		this.currentLength--
+		if this.currentLength == 0 && this.loop {
+			this.restart()
 		}
 	}
 }
 
-func (d *DMC) stepShifter() {
-	if d.bitCount == 0 {
+func (this *DMC) stepShifter() {
+	if this.bitCount == 0 {
 		return
 	}
-	if d.shiftRegister&1 == 1 {
-		if d.value <= 125 {
-			d.value += 2
+	if this.shiftRegister&1 == 1 {
+		if this.value <= 125 {
+			this.value += 2
 		}
 	} else {
-		if d.value >= 2 {
-			d.value -= 2
+		if this.value >= 2 {
+			this.value -= 2
 		}
 	}
-	d.shiftRegister >>= 1
-	d.bitCount--
+	this.shiftRegister >>= 1
+	this.bitCount--
 }
 
-func (d *DMC) output() byte {
-	return d.value
+func (this *DMC) output() byte {
+	return this.value
 }

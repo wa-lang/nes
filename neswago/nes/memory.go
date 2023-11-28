@@ -15,51 +15,51 @@ func NewCPUMemory(console *Console) Memory {
 	return &cpuMemory{console}
 }
 
-func (mem *cpuMemory) Read(address uint16) byte {
+func (this *cpuMemory) Read(address uint16) byte {
 	switch {
 	case address < 0x2000:
-		return mem.console.RAM[address%0x0800]
+		return this.console.RAM[address%0x0800]
 	case address < 0x4000:
-		return mem.console.PPU.readRegister(0x2000 + address%8)
+		return this.console.PPU.readRegister(0x2000 + address%8)
 	case address == 0x4014:
-		return mem.console.PPU.readRegister(address)
+		return this.console.PPU.readRegister(address)
 	case address == 0x4015:
-		return mem.console.APU.readRegister(address)
+		return this.console.APU.readRegister(address)
 	case address == 0x4016:
-		return mem.console.Controller1.Read()
+		return this.console.Controller1.Read()
 	case address == 0x4017:
-		return mem.console.Controller2.Read()
+		return this.console.Controller2.Read()
 	case address < 0x6000:
 		// TODO: I/O registers
 	case address >= 0x6000:
-		return mem.console.Mapper.Read(address)
+		return this.console.Mapper.Read(address)
 	default:
 		log_Fatalf("unhandled cpu memory read at address: 0x%04X", address)
 	}
 	return 0
 }
 
-func (mem *cpuMemory) Write(address uint16, value byte) {
+func (this *cpuMemory) Write(address uint16, value byte) {
 	switch {
 	case address < 0x2000:
-		mem.console.RAM[address%0x0800] = value
+		this.console.RAM[address%0x0800] = value
 	case address < 0x4000:
-		mem.console.PPU.writeRegister(0x2000+address%8, value)
+		this.console.PPU.writeRegister(0x2000+address%8, value)
 	case address < 0x4014:
-		mem.console.APU.writeRegister(address, value)
+		this.console.APU.writeRegister(address, value)
 	case address == 0x4014:
-		mem.console.PPU.writeRegister(address, value)
+		this.console.PPU.writeRegister(address, value)
 	case address == 0x4015:
-		mem.console.APU.writeRegister(address, value)
+		this.console.APU.writeRegister(address, value)
 	case address == 0x4016:
-		mem.console.Controller1.Write(value)
-		mem.console.Controller2.Write(value)
+		this.console.Controller1.Write(value)
+		this.console.Controller2.Write(value)
 	case address == 0x4017:
-		mem.console.APU.writeRegister(address, value)
+		this.console.APU.writeRegister(address, value)
 	case address < 0x6000:
 		// TODO: I/O registers
 	case address >= 0x6000:
-		mem.console.Mapper.Write(address, value)
+		this.console.Mapper.Write(address, value)
 	default:
 		log_Fatalf("unhandled cpu memory write at address: 0x%04X", address)
 	}
@@ -75,32 +75,32 @@ func NewPPUMemory(console *Console) Memory {
 	return &ppuMemory{console}
 }
 
-func (mem *ppuMemory) Read(address uint16) byte {
+func (this *ppuMemory) Read(address uint16) byte {
 	address = address % 0x4000
 	switch {
 	case address < 0x2000:
-		return mem.console.Mapper.Read(address)
+		return this.console.Mapper.Read(address)
 	case address < 0x3F00:
-		mode := mem.console.Cartridge.Mirror
-		return mem.console.PPU.nameTableData[MirrorAddress(mode, address)%2048]
+		mode := this.console.Cartridge.Mirror
+		return this.console.PPU.nameTableData[MirrorAddress(mode, address)%2048]
 	case address < 0x4000:
-		return mem.console.PPU.readPalette(address % 32)
+		return this.console.PPU.readPalette(address % 32)
 	default:
 		log_Fatalf("unhandled ppu memory read at address: 0x%04X", address)
 	}
 	return 0
 }
 
-func (mem *ppuMemory) Write(address uint16, value byte) {
+func (this *ppuMemory) Write(address uint16, value byte) {
 	address = address % 0x4000
 	switch {
 	case address < 0x2000:
-		mem.console.Mapper.Write(address, value)
+		this.console.Mapper.Write(address, value)
 	case address < 0x3F00:
-		mode := mem.console.Cartridge.Mirror
-		mem.console.PPU.nameTableData[MirrorAddress(mode, address)%2048] = value
+		mode := this.console.Cartridge.Mirror
+		this.console.PPU.nameTableData[MirrorAddress(mode, address)%2048] = value
 	case address < 0x4000:
-		mem.console.PPU.writePalette(address%32, value)
+		this.console.PPU.writePalette(address%32, value)
 	default:
 		log_Fatalf("unhandled ppu memory write at address: 0x%04X", address)
 	}

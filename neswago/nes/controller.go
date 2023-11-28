@@ -21,25 +21,25 @@ func NewController() *Controller {
 	return &Controller{}
 }
 
-func (c *Controller) SetButtons(buttons [8]bool) {
-	c.buttons = buttons
+func (this *Controller) SetButtons(buttons [8]bool) {
+	this.buttons = buttons
 }
 
-func (c *Controller) Read() byte {
+func (this *Controller) Read() byte {
 	value := byte(0)
-	if c.index < 8 && c.buttons[c.index] {
+	if this.index < 8 && this.buttons[this.index] {
 		value = 1
 	}
-	c.index++
-	if c.strobe&1 == 1 {
-		c.index = 0
+	this.index++
+	if this.strobe&1 == 1 {
+		this.index = 0
 	}
 	return value
 }
 
-func (c *Controller) Write(value byte) {
-	c.strobe = value
-	if c.strobe&1 == 1 {
-		c.index = 0
+func (this *Controller) Write(value byte) {
+	this.strobe = value
+	if this.strobe&1 == 1 {
+		this.index = 0
 	}
 }

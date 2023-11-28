@@ -45,14 +45,3 @@ func HighPassFilter(sampleRate float32, cutoffFreq float32) Filter {
 		A1: (1 - c) * a0i,
 	}
 }
-
-type FilterChain []Filter
-
-func (fc FilterChain) Step(x float32) float32 {
-	if fc != nil {
-		for i := range fc {
-			x = fc[i].Step(x)
-		}
-	}
-	return x
-}

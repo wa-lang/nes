@@ -15,16 +15,16 @@ type Mapper4 struct {
 }
 
 func NewMapper4(console *Console, cartridge *Cartridge) Mapper {
-	m := Mapper4{Cartridge: cartridge, console: console}
-	m.prgOffsets[0] = m.prgBankOffset(0)
-	m.prgOffsets[1] = m.prgBankOffset(1)
-	m.prgOffsets[2] = m.prgBankOffset(-2)
-	m.prgOffsets[3] = m.prgBankOffset(-1)
-	return &m
+	this := &Mapper4{Cartridge: cartridge, console: console}
+	this.prgOffsets[0] = this.prgBankOffset(0)
+	this.prgOffsets[1] = this.prgBankOffset(1)
+	this.prgOffsets[2] = this.prgBankOffset(-2)
+	this.prgOffsets[3] = this.prgBankOffset(-1)
+	return this
 }
 
-func (m *Mapper4) Step() {
-	ppu := m.console.PPU
+func (this *Mapper4) Step() {
+	ppu := this.console.PPU
 	if ppu.Cycle != 280 { // TODO: this *should* be 260
 		return
 	}
@@ -34,170 +34,170 @@ func (m *Mapper4) Step() {
 	if ppu.flagShowBackground == 0 && ppu.flagShowSprites == 0 {
 		return
 	}
-	m.HandleScanLine()
+	this.HandleScanLine()
 }
 
-func (m *Mapper4) HandleScanLine() {
-	if m.counter == 0 {
-		m.counter = m.reload
+func (this *Mapper4) HandleScanLine() {
+	if this.counter == 0 {
+		this.counter = this.reload
 	} else {
-		m.counter--
-		if m.counter == 0 && m.irqEnable {
-			m.console.CPU.triggerIRQ()
+		this.counter--
+		if this.counter == 0 && this.irqEnable {
+			this.console.CPU.triggerIRQ()
 		}
 	}
 }
 
-func (m *Mapper4) Read(address uint16) byte {
+func (this *Mapper4) Read(address uint16) byte {
 	switch {
 	case address < 0x2000:
 		bank := address / 0x0400
 		offset := address % 0x0400
-		return m.CHR[m.chrOffsets[bank]+int(offset)]
+		return this.CHR[this.chrOffsets[bank]+int(offset)]
 	case address >= 0x8000:
 		address = address - 0x8000
 		bank := address / 0x2000
 		offset := address % 0x2000
-		return m.PRG[m.prgOffsets[bank]+int(offset)]
+		return this.PRG[this.prgOffsets[bank]+int(offset)]
 	case address >= 0x6000:
-		return m.SRAM[int(address)-0x6000]
+		return this.SRAM[int(address)-0x6000]
 	default:
 		log_Fatalf("unhandled mapper4 read at address: 0x%04X", address)
 	}
 	return 0
 }
 
-func (m *Mapper4) Write(address uint16, value byte) {
+func (this *Mapper4) Write(address uint16, value byte) {
 	switch {
 	case address < 0x2000:
 		bank := address / 0x0400
 		offset := address % 0x0400
-		m.CHR[m.chrOffsets[bank]+int(offset)] = value
+		this.CHR[this.chrOffsets[bank]+int(offset)] = value
 	case address >= 0x8000:
-		m.writeRegister(address, value)
+		this.writeRegister(address, value)
 	case address >= 0x6000:
-		m.SRAM[int(address)-0x6000] = value
+		this.SRAM[int(address)-0x6000] = value
 	default:
 		log_Fatalf("unhandled mapper4 write at address: 0x%04X", address)
 	}
 }
 
-func (m *Mapper4) writeRegister(address uint16, value byte) {
+func (this *Mapper4) writeRegister(address uint16, value byte) {
 	switch {
 	case address <= 0x9FFF && address%2 == 0:
-		m.writeBankSelect(value)
+		this.writeBankSelect(value)
 	case address <= 0x9FFF && address%2 == 1:
-		m.writeBankData(value)
+		this.writeBankData(value)
 	case address <= 0xBFFF && address%2 == 0:
-		m.writeMirror(value)
+		this.writeMirror(value)
 	case address <= 0xBFFF && address%2 == 1:
-		m.writeProtect(value)
+		this.writeProtect(value)
 	case address <= 0xDFFF && address%2 == 0:
-		m.writeIRQLatch(value)
+		this.writeIRQLatch(value)
 	case address <= 0xDFFF && address%2 == 1:
-		m.writeIRQReload(value)
+		this.writeIRQReload(value)
 	case address <= 0xFFFF && address%2 == 0:
-		m.writeIRQDisable(value)
+		this.writeIRQDisable(value)
 	case address <= 0xFFFF && address%2 == 1:
-		m.writeIRQEnable(value)
+		this.writeIRQEnable(value)
 	}
 }
 
-func (m *Mapper4) writeBankSelect(value byte) {
-	m.prgMode = (value >> 6) & 1
-	m.chrMode = (value >> 7) & 1
-	m.register = value & 7
-	m.updateOffsets()
+func (this *Mapper4) writeBankSelect(value byte) {
+	this.prgMode = (value >> 6) & 1
+	this.chrMode = (value >> 7) & 1
+	this.register = value & 7
+	this.updateOffsets()
 }
 
-func (m *Mapper4) writeBankData(value byte) {
-	m.registers[m.register] = value
-	m.updateOffsets()
+func (this *Mapper4) writeBankData(value byte) {
+	this.registers[this.register] = value
+	this.updateOffsets()
 }
 
-func (m *Mapper4) writeMirror(value byte) {
+func (this *Mapper4) writeMirror(value byte) {
 	switch value & 1 {
 	case 0:
-		m.Cartridge.Mirror = MirrorVertical
+		this.Cartridge.Mirror = MirrorVertical
 	case 1:
-		m.Cartridge.Mirror = MirrorHorizontal
+		this.Cartridge.Mirror = MirrorHorizontal
 	}
 }
 
-func (m *Mapper4) writeProtect(value byte) {
+func (this *Mapper4) writeProtect(value byte) {
 }
 
-func (m *Mapper4) writeIRQLatch(value byte) {
-	m.reload = value
+func (this *Mapper4) writeIRQLatch(value byte) {
+	this.reload = value
 }
 
-func (m *Mapper4) writeIRQReload(value byte) {
-	m.counter = 0
+func (this *Mapper4) writeIRQReload(value byte) {
+	this.counter = 0
 }
 
-func (m *Mapper4) writeIRQDisable(value byte) {
-	m.irqEnable = false
+func (this *Mapper4) writeIRQDisable(value byte) {
+	this.irqEnable = false
 }
 
-func (m *Mapper4) writeIRQEnable(value byte) {
-	m.irqEnable = true
+func (this *Mapper4) writeIRQEnable(value byte) {
+	this.irqEnable = true
 }
 
-func (m *Mapper4) prgBankOffset(index int) int {
+func (this *Mapper4) prgBankOffset(index int) int {
 	if index >= 0x80 {
 		index -= 0x100
 	}
-	index %= len(m.PRG) / 0x2000
+	index %= len(this.PRG) / 0x2000
 	offset := index * 0x2000
 	if offset < 0 {
-		offset += len(m.PRG)
+		offset += len(this.PRG)
 	}
 	return offset
 }
 
-func (m *Mapper4) chrBankOffset(index int) int {
+func (this *Mapper4) chrBankOffset(index int) int {
 	if index >= 0x80 {
 		index -= 0x100
 	}
-	index %= len(m.CHR) / 0x0400
+	index %= len(this.CHR) / 0x0400
 	offset := index * 0x0400
 	if offset < 0 {
-		offset += len(m.CHR)
+		offset += len(this.CHR)
 	}
 	return offset
 }
 
-func (m *Mapper4) updateOffsets() {
-	switch m.prgMode {
+func (this *Mapper4) updateOffsets() {
+	switch this.prgMode {
 	case 0:
-		m.prgOffsets[0] = m.prgBankOffset(int(m.registers[6]))
-		m.prgOffsets[1] = m.prgBankOffset(int(m.registers[7]))
-		m.prgOffsets[2] = m.prgBankOffset(-2)
-		m.prgOffsets[3] = m.prgBankOffset(-1)
+		this.prgOffsets[0] = this.prgBankOffset(int(this.registers[6]))
+		this.prgOffsets[1] = this.prgBankOffset(int(this.registers[7]))
+		this.prgOffsets[2] = this.prgBankOffset(-2)
+		this.prgOffsets[3] = this.prgBankOffset(-1)
 	case 1:
-		m.prgOffsets[0] = m.prgBankOffset(-2)
-		m.prgOffsets[1] = m.prgBankOffset(int(m.registers[7]))
-		m.prgOffsets[2] = m.prgBankOffset(int(m.registers[6]))
-		m.prgOffsets[3] = m.prgBankOffset(-1)
+		this.prgOffsets[0] = this.prgBankOffset(-2)
+		this.prgOffsets[1] = this.prgBankOffset(int(this.registers[7]))
+		this.prgOffsets[2] = this.prgBankOffset(int(this.registers[6]))
+		this.prgOffsets[3] = this.prgBankOffset(-1)
 	}
-	switch m.chrMode {
+	switch this.chrMode {
 	case 0:
-		m.chrOffsets[0] = m.chrBankOffset(int(m.registers[0] & 0xFE))
-		m.chrOffsets[1] = m.chrBankOffset(int(m.registers[0] | 0x01))
-		m.chrOffsets[2] = m.chrBankOffset(int(m.registers[1] & 0xFE))
-		m.chrOffsets[3] = m.chrBankOffset(int(m.registers[1] | 0x01))
-		m.chrOffsets[4] = m.chrBankOffset(int(m.registers[2]))
-		m.chrOffsets[5] = m.chrBankOffset(int(m.registers[3]))
-		m.chrOffsets[6] = m.chrBankOffset(int(m.registers[4]))
-		m.chrOffsets[7] = m.chrBankOffset(int(m.registers[5]))
+		this.chrOffsets[0] = this.chrBankOffset(int(this.registers[0] & 0xFE))
+		this.chrOffsets[1] = this.chrBankOffset(int(this.registers[0] | 0x01))
+		this.chrOffsets[2] = this.chrBankOffset(int(this.registers[1] & 0xFE))
+		this.chrOffsets[3] = this.chrBankOffset(int(this.registers[1] | 0x01))
+		this.chrOffsets[4] = this.chrBankOffset(int(this.registers[2]))
+		this.chrOffsets[5] = this.chrBankOffset(int(this.registers[3]))
+		this.chrOffsets[6] = this.chrBankOffset(int(this.registers[4]))
+		this.chrOffsets[7] = this.chrBankOffset(int(this.registers[5]))
 	case 1:
-		m.chrOffsets[0] = m.chrBankOffset(int(m.registers[2]))
-		m.chrOffsets[1] = m.chrBankOffset(int(m.registers[3]))
-		m.chrOffsets[2] = m.chrBankOffset(int(m.registers[4]))
-		m.chrOffsets[3] = m.chrBankOffset(int(m.registers[5]))
-		m.chrOffsets[4] = m.chrBankOffset(int(m.registers[0] & 0xFE))
-		m.chrOffsets[5] = m.chrBankOffset(int(m.registers[0] | 0x01))
-		m.chrOffsets[6] = m.chrBankOffset(int(m.registers[1] & 0xFE))
-		m.chrOffsets[7] = m.chrBankOffset(int(m.registers[1] | 0x01))
+		this.chrOffsets[0] = this.chrBankOffset(int(this.registers[2]))
+		this.chrOffsets[1] = this.chrBankOffset(int(this.registers[3]))
+		this.chrOffsets[2] = this.chrBankOffset(int(this.registers[4]))
+		this.chrOffsets[3] = this.chrBankOffset(int(this.registers[5]))
+		this.chrOffsets[4] = this.chrBankOffset(int(this.registers[0] & 0xFE))
+		this.chrOffsets[5] = this.chrBankOffset(int(this.registers[0] | 0x01))
+		this.chrOffsets[6] = this.chrBankOffset(int(this.registers[1] & 0xFE))
+		this.chrOffsets[7] = this.chrBankOffset(int(this.registers[1] | 0x01))
 	}
 }

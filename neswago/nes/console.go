@@ -36,47 +36,47 @@ func NewConsole(name string, romBytes []byte) (*Console, error) {
 	return &console, nil
 }
 
-func (console *Console) Reset() {
-	console.CPU.Reset()
+func (this *Console) Reset() {
+	this.CPU.Reset()
 }
 
-func (console *Console) Step() int {
-	cpuCycles := console.CPU.Step()
+func (this *Console) Step() int {
+	cpuCycles := this.CPU.Step()
 	ppuCycles := cpuCycles * 3
 	for i := 0; i < ppuCycles; i++ {
-		console.PPU.Step()
-		console.Mapper.Step()
+		this.PPU.Step()
+		this.Mapper.Step()
 	}
 	for i := 0; i < cpuCycles; i++ {
-		console.APU.Step()
+		this.APU.Step()
 	}
 	return cpuCycles
 }
 
-func (console *Console) StepFrame() int {
+func (this *Console) StepFrame() int {
 	cpuCycles := 0
-	frame := console.PPU.Frame
-	for frame == console.PPU.Frame {
-		cpuCycles += console.Step()
+	frame := this.PPU.Frame
+	for frame == this.PPU.Frame {
+		cpuCycles += this.Step()
 	}
 	return cpuCycles
 }
 
-func (console *Console) StepSeconds(seconds float64) {
+func (this *Console) StepSeconds(seconds float64) {
 	cycles := int(CPUFrequency * seconds)
 	for cycles > 0 {
-		cycles -= console.Step()
+		cycles -= this.Step()
 	}
 }
 
-func (console *Console) Buffer() *image.RGBA {
-	return console.PPU.front
+func (this *Console) Buffer() *image.RGBA {
+	return this.PPU.front
 }
 
-func (console *Console) SetButtons1(buttons [8]bool) {
-	console.Controller1.SetButtons(buttons)
+func (this *Console) SetButtons1(buttons [8]bool) {
+	this.Controller1.SetButtons(buttons)
 }
 
-func (console *Console) SetButtons2(buttons [8]bool) {
-	console.Controller2.SetButtons(buttons)
+func (this *Console) SetButtons2(buttons [8]bool) {
+	this.Controller2.SetButtons(buttons)
 }

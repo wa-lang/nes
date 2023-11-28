@@ -78,204 +78,204 @@ type PPU struct {
 }
 
 func NewPPU(console *Console) *PPU {
-	ppu := PPU{Memory: NewPPUMemory(console), console: console}
-	ppu.front = image.NewRGBA(image.Rect(0, 0, 256, 240))
-	ppu.back = image.NewRGBA(image.Rect(0, 0, 256, 240))
-	ppu.Reset()
-	return &ppu
+	this := &PPU{Memory: NewPPUMemory(console), console: console}
+	this.front = image.NewRGBA(image.Rect(0, 0, 256, 240))
+	this.back = image.NewRGBA(image.Rect(0, 0, 256, 240))
+	this.Reset()
+	return this
 }
 
-func (ppu *PPU) Reset() {
-	ppu.Cycle = 340
-	ppu.ScanLine = 240
-	ppu.Frame = 0
-	ppu.writeControl(0)
-	ppu.writeMask(0)
-	ppu.writeOAMAddress(0)
+func (this *PPU) Reset() {
+	this.Cycle = 340
+	this.ScanLine = 240
+	this.Frame = 0
+	this.writeControl(0)
+	this.writeMask(0)
+	this.writeOAMAddress(0)
 }
 
-func (ppu *PPU) readPalette(address uint16) byte {
+func (this *PPU) readPalette(address uint16) byte {
 	if address >= 16 && address%4 == 0 {
 		address -= 16
 	}
-	return ppu.paletteData[address]
+	return this.paletteData[address]
 }
 
-func (ppu *PPU) writePalette(address uint16, value byte) {
+func (this *PPU) writePalette(address uint16, value byte) {
 	if address >= 16 && address%4 == 0 {
 		address -= 16
 	}
-	ppu.paletteData[address] = value
+	this.paletteData[address] = value
 }
 
-func (ppu *PPU) readRegister(address uint16) byte {
+func (this *PPU) readRegister(address uint16) byte {
 	switch address {
 	case 0x2002:
-		return ppu.readStatus()
+		return this.readStatus()
 	case 0x2004:
-		return ppu.readOAMData()
+		return this.readOAMData()
 	case 0x2007:
-		return ppu.readData()
+		return this.readData()
 	}
 	return 0
 }
 
-func (ppu *PPU) writeRegister(address uint16, value byte) {
-	ppu.register = value
+func (this *PPU) writeRegister(address uint16, value byte) {
+	this.register = value
 	switch address {
 	case 0x2000:
-		ppu.writeControl(value)
+		this.writeControl(value)
 	case 0x2001:
-		ppu.writeMask(value)
+		this.writeMask(value)
 	case 0x2003:
-		ppu.writeOAMAddress(value)
+		this.writeOAMAddress(value)
 	case 0x2004:
-		ppu.writeOAMData(value)
+		this.writeOAMData(value)
 	case 0x2005:
-		ppu.writeScroll(value)
+		this.writeScroll(value)
 	case 0x2006:
-		ppu.writeAddress(value)
+		this.writeAddress(value)
 	case 0x2007:
-		ppu.writeData(value)
+		this.writeData(value)
 	case 0x4014:
-		ppu.writeDMA(value)
+		this.writeDMA(value)
 	}
 }
 
 // $2000: PPUCTRL
-func (ppu *PPU) writeControl(value byte) {
-	ppu.flagNameTable = (value >> 0) & 3
-	ppu.flagIncrement = (value >> 2) & 1
-	ppu.flagSpriteTable = (value >> 3) & 1
-	ppu.flagBackgroundTable = (value >> 4) & 1
-	ppu.flagSpriteSize = (value >> 5) & 1
-	ppu.flagMasterSlave = (value >> 6) & 1
-	ppu.nmiOutput = (value>>7)&1 == 1
-	ppu.nmiChange()
+func (this *PPU) writeControl(value byte) {
+	this.flagNameTable = (value >> 0) & 3
+	this.flagIncrement = (value >> 2) & 1
+	this.flagSpriteTable = (value >> 3) & 1
+	this.flagBackgroundTable = (value >> 4) & 1
+	this.flagSpriteSize = (value >> 5) & 1
+	this.flagMasterSlave = (value >> 6) & 1
+	this.nmiOutput = (value>>7)&1 == 1
+	this.nmiChange()
 	// t: ....BA.. ........ = d: ......BA
-	ppu.t = (ppu.t & 0xF3FF) | ((uint16(value) & 0x03) << 10)
+	this.t = (this.t & 0xF3FF) | ((uint16(value) & 0x03) << 10)
 }
 
 // $2001: PPUMASK
-func (ppu *PPU) writeMask(value byte) {
-	ppu.flagGrayscale = (value >> 0) & 1
-	ppu.flagShowLeftBackground = (value >> 1) & 1
-	ppu.flagShowLeftSprites = (value >> 2) & 1
-	ppu.flagShowBackground = (value >> 3) & 1
-	ppu.flagShowSprites = (value >> 4) & 1
-	ppu.flagRedTint = (value >> 5) & 1
-	ppu.flagGreenTint = (value >> 6) & 1
-	ppu.flagBlueTint = (value >> 7) & 1
+func (this *PPU) writeMask(value byte) {
+	this.flagGrayscale = (value >> 0) & 1
+	this.flagShowLeftBackground = (value >> 1) & 1
+	this.flagShowLeftSprites = (value >> 2) & 1
+	this.flagShowBackground = (value >> 3) & 1
+	this.flagShowSprites = (value >> 4) & 1
+	this.flagRedTint = (value >> 5) & 1
+	this.flagGreenTint = (value >> 6) & 1
+	this.flagBlueTint = (value >> 7) & 1
 }
 
 // $2002: PPUSTATUS
-func (ppu *PPU) readStatus() byte {
-	result := ppu.register & 0x1F
-	result |= ppu.flagSpriteOverflow << 5
-	result |= ppu.flagSpriteZeroHit << 6
-	if ppu.nmiOccurred {
+func (this *PPU) readStatus() byte {
+	result := this.register & 0x1F
+	result |= this.flagSpriteOverflow << 5
+	result |= this.flagSpriteZeroHit << 6
+	if this.nmiOccurred {
 		result |= 1 << 7
 	}
-	ppu.nmiOccurred = false
-	ppu.nmiChange()
+	this.nmiOccurred = false
+	this.nmiChange()
 	// w:                   = 0
-	ppu.w = 0
+	this.w = 0
 	return result
 }
 
 // $2003: OAMADDR
-func (ppu *PPU) writeOAMAddress(value byte) {
-	ppu.oamAddress = value
+func (this *PPU) writeOAMAddress(value byte) {
+	this.oamAddress = value
 }
 
 // $2004: OAMDATA (read)
-func (ppu *PPU) readOAMData() byte {
-	data := ppu.oamData[ppu.oamAddress]
-	if (ppu.oamAddress & 0x03) == 0x02 {
+func (this *PPU) readOAMData() byte {
+	data := this.oamData[this.oamAddress]
+	if (this.oamAddress & 0x03) == 0x02 {
 		data = data & 0xE3
 	}
 	return data
 }
 
 // $2004: OAMDATA (write)
-func (ppu *PPU) writeOAMData(value byte) {
-	ppu.oamData[ppu.oamAddress] = value
-	ppu.oamAddress++
+func (this *PPU) writeOAMData(value byte) {
+	this.oamData[this.oamAddress] = value
+	this.oamAddress++
 }
 
 // $2005: PPUSCROLL
-func (ppu *PPU) writeScroll(value byte) {
-	if ppu.w == 0 {
+func (this *PPU) writeScroll(value byte) {
+	if this.w == 0 {
 		// t: ........ ...HGFED = d: HGFED...
 		// x:               CBA = d: .....CBA
 		// w:                   = 1
-		ppu.t = (ppu.t & 0xFFE0) | (uint16(value) >> 3)
-		ppu.x = value & 0x07
-		ppu.w = 1
+		this.t = (this.t & 0xFFE0) | (uint16(value) >> 3)
+		this.x = value & 0x07
+		this.w = 1
 	} else {
 		// t: .CBA..HG FED..... = d: HGFEDCBA
 		// w:                   = 0
-		ppu.t = (ppu.t & 0x8FFF) | ((uint16(value) & 0x07) << 12)
-		ppu.t = (ppu.t & 0xFC1F) | ((uint16(value) & 0xF8) << 2)
-		ppu.w = 0
+		this.t = (this.t & 0x8FFF) | ((uint16(value) & 0x07) << 12)
+		this.t = (this.t & 0xFC1F) | ((uint16(value) & 0xF8) << 2)
+		this.w = 0
 	}
 }
 
 // $2006: PPUADDR
-func (ppu *PPU) writeAddress(value byte) {
-	if ppu.w == 0 {
+func (this *PPU) writeAddress(value byte) {
+	if this.w == 0 {
 		// t: ..FEDCBA ........ = d: ..FEDCBA
 		// t: .X...... ........ = 0
 		// w:                   = 1
-		ppu.t = (ppu.t & 0x80FF) | ((uint16(value) & 0x3F) << 8)
-		ppu.w = 1
+		this.t = (this.t & 0x80FF) | ((uint16(value) & 0x3F) << 8)
+		this.w = 1
 	} else {
 		// t: ........ HGFEDCBA = d: HGFEDCBA
 		// v                    = t
 		// w:                   = 0
-		ppu.t = (ppu.t & 0xFF00) | uint16(value)
-		ppu.v = ppu.t
-		ppu.w = 0
+		this.t = (this.t & 0xFF00) | uint16(value)
+		this.v = this.t
+		this.w = 0
 	}
 }
 
 // $2007: PPUDATA (read)
-func (ppu *PPU) readData() byte {
-	value := ppu.Read(ppu.v)
+func (this *PPU) readData() byte {
+	value := this.Read(this.v)
 	// emulate buffered reads
-	if ppu.v%0x4000 < 0x3F00 {
-		buffered := ppu.bufferedData
-		ppu.bufferedData = value
+	if this.v%0x4000 < 0x3F00 {
+		buffered := this.bufferedData
+		this.bufferedData = value
 		value = buffered
 	} else {
-		ppu.bufferedData = ppu.Read(ppu.v - 0x1000)
+		this.bufferedData = this.Read(this.v - 0x1000)
 	}
 	// increment address
-	if ppu.flagIncrement == 0 {
-		ppu.v += 1
+	if this.flagIncrement == 0 {
+		this.v += 1
 	} else {
-		ppu.v += 32
+		this.v += 32
 	}
 	return value
 }
 
 // $2007: PPUDATA (write)
-func (ppu *PPU) writeData(value byte) {
-	ppu.Write(ppu.v, value)
-	if ppu.flagIncrement == 0 {
-		ppu.v += 1
+func (this *PPU) writeData(value byte) {
+	this.Write(this.v, value)
+	if this.flagIncrement == 0 {
+		this.v += 1
 	} else {
-		ppu.v += 32
+		this.v += 32
 	}
 }
 
 // $4014: OAMDMA
-func (ppu *PPU) writeDMA(value byte) {
-	cpu := ppu.console.CPU
+func (this *PPU) writeDMA(value byte) {
+	cpu := this.console.CPU
 	address := uint16(value) << 8
 	for i := 0; i < 256; i++ {
-		ppu.oamData[ppu.oamAddress] = cpu.Read(address)
-		ppu.oamAddress++
+		this.oamData[this.oamAddress] = cpu.Read(address)
+		this.oamAddress++
 		address++
 	}
 	cpu.stall += 513
@@ -286,36 +286,36 @@ func (ppu *PPU) writeDMA(value byte) {
 
 // NTSC Timing Helper Functions
 
-func (ppu *PPU) incrementX() {
+func (this *PPU) incrementX() {
 	// increment hori(v)
 	// if coarse X == 31
-	if ppu.v&0x001F == 31 {
+	if this.v&0x001F == 31 {
 		// coarse X = 0
-		ppu.v &= 0xFFE0
+		this.v &= 0xFFE0
 		// switch horizontal nametable
-		ppu.v ^= 0x0400
+		this.v ^= 0x0400
 	} else {
 		// increment coarse X
-		ppu.v++
+		this.v++
 	}
 }
 
-func (ppu *PPU) incrementY() {
+func (this *PPU) incrementY() {
 	// increment vert(v)
 	// if fine Y < 7
-	if ppu.v&0x7000 != 0x7000 {
+	if this.v&0x7000 != 0x7000 {
 		// increment fine Y
-		ppu.v += 0x1000
+		this.v += 0x1000
 	} else {
 		// fine Y = 0
-		ppu.v &= 0x8FFF
+		this.v &= 0x8FFF
 		// let y = coarse Y
-		y := (ppu.v & 0x03E0) >> 5
+		y := (this.v & 0x03E0) >> 5
 		if y == 29 {
 			// coarse Y = 0
 			y = 0
 			// switch vertical nametable
-			ppu.v ^= 0x0800
+			this.v ^= 0x0800
 		} else if y == 31 {
 			// coarse Y = 0, nametable not switched
 			y = 0
@@ -324,109 +324,109 @@ func (ppu *PPU) incrementY() {
 			y++
 		}
 		// put coarse Y back into v
-		ppu.v = (ppu.v & 0xFC1F) | (y << 5)
+		this.v = (this.v & 0xFC1F) | (y << 5)
 	}
 }
 
-func (ppu *PPU) copyX() {
+func (this *PPU) copyX() {
 	// hori(v) = hori(t)
 	// v: .....F.. ...EDCBA = t: .....F.. ...EDCBA
-	ppu.v = (ppu.v & 0xFBE0) | (ppu.t & 0x041F)
+	this.v = (this.v & 0xFBE0) | (this.t & 0x041F)
 }
 
-func (ppu *PPU) copyY() {
+func (this *PPU) copyY() {
 	// vert(v) = vert(t)
 	// v: .IHGF.ED CBA..... = t: .IHGF.ED CBA.....
-	ppu.v = (ppu.v & 0x841F) | (ppu.t & 0x7BE0)
+	this.v = (this.v & 0x841F) | (this.t & 0x7BE0)
 }
 
-func (ppu *PPU) nmiChange() {
-	nmi := ppu.nmiOutput && ppu.nmiOccurred
-	if nmi && !ppu.nmiPrevious {
+func (this *PPU) nmiChange() {
+	nmi := this.nmiOutput && this.nmiOccurred
+	if nmi && !this.nmiPrevious {
 		// TODO: this fixes some games but the delay shouldn't have to be so
 		// long, so the timings are off somewhere
-		ppu.nmiDelay = 15
+		this.nmiDelay = 15
 	}
-	ppu.nmiPrevious = nmi
+	this.nmiPrevious = nmi
 }
 
-func (ppu *PPU) setVerticalBlank() {
-	ppu.front, ppu.back = ppu.back, ppu.front
-	ppu.nmiOccurred = true
-	ppu.nmiChange()
+func (this *PPU) setVerticalBlank() {
+	this.front, this.back = this.back, this.front
+	this.nmiOccurred = true
+	this.nmiChange()
 }
 
-func (ppu *PPU) clearVerticalBlank() {
-	ppu.nmiOccurred = false
-	ppu.nmiChange()
+func (this *PPU) clearVerticalBlank() {
+	this.nmiOccurred = false
+	this.nmiChange()
 }
 
-func (ppu *PPU) fetchNameTableByte() {
-	v := ppu.v
+func (this *PPU) fetchNameTableByte() {
+	v := this.v
 	address := 0x2000 | (v & 0x0FFF)
-	ppu.nameTableByte = ppu.Read(address)
+	this.nameTableByte = this.Read(address)
 }
 
-func (ppu *PPU) fetchAttributeTableByte() {
-	v := ppu.v
+func (this *PPU) fetchAttributeTableByte() {
+	v := this.v
 	address := 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07)
 	shift := ((v >> 4) & 4) | (v & 2)
-	ppu.attributeTableByte = ((ppu.Read(address) >> shift) & 3) << 2
+	this.attributeTableByte = ((this.Read(address) >> shift) & 3) << 2
 }
 
-func (ppu *PPU) fetchLowTileByte() {
-	fineY := (ppu.v >> 12) & 7
-	table := ppu.flagBackgroundTable
-	tile := ppu.nameTableByte
+func (this *PPU) fetchLowTileByte() {
+	fineY := (this.v >> 12) & 7
+	table := this.flagBackgroundTable
+	tile := this.nameTableByte
 	address := 0x1000*uint16(table) + uint16(tile)*16 + fineY
-	ppu.lowTileByte = ppu.Read(address)
+	this.lowTileByte = this.Read(address)
 }
 
-func (ppu *PPU) fetchHighTileByte() {
-	fineY := (ppu.v >> 12) & 7
-	table := ppu.flagBackgroundTable
-	tile := ppu.nameTableByte
+func (this *PPU) fetchHighTileByte() {
+	fineY := (this.v >> 12) & 7
+	table := this.flagBackgroundTable
+	tile := this.nameTableByte
 	address := 0x1000*uint16(table) + uint16(tile)*16 + fineY
-	ppu.highTileByte = ppu.Read(address + 8)
+	this.highTileByte = this.Read(address + 8)
 }
 
-func (ppu *PPU) storeTileData() {
+func (this *PPU) storeTileData() {
 	var data uint32
 	for i := 0; i < 8; i++ {
-		a := ppu.attributeTableByte
-		p1 := (ppu.lowTileByte & 0x80) >> 7
-		p2 := (ppu.highTileByte & 0x80) >> 6
-		ppu.lowTileByte <<= 1
-		ppu.highTileByte <<= 1
+		a := this.attributeTableByte
+		p1 := (this.lowTileByte & 0x80) >> 7
+		p2 := (this.highTileByte & 0x80) >> 6
+		this.lowTileByte <<= 1
+		this.highTileByte <<= 1
 		data <<= 4
 		data |= uint32(a | p1 | p2)
 	}
-	ppu.tileData |= uint64(data)
+	this.tileData |= uint64(data)
 }
 
-func (ppu *PPU) fetchTileData() uint32 {
-	return uint32(ppu.tileData >> 32)
+func (this *PPU) fetchTileData() uint32 {
+	return uint32(this.tileData >> 32)
 }
 
-func (ppu *PPU) backgroundPixel() byte {
-	if ppu.flagShowBackground == 0 {
+func (this *PPU) backgroundPixel() byte {
+	if this.flagShowBackground == 0 {
 		return 0
 	}
-	data := ppu.fetchTileData() >> ((7 - ppu.x) * 4)
+	data := this.fetchTileData() >> ((7 - this.x) * 4)
 	return byte(data & 0x0F)
 }
 
-func (ppu *PPU) spritePixel() (byte, byte) {
-	if ppu.flagShowSprites == 0 {
+func (this *PPU) spritePixel() (byte, byte) {
+	if this.flagShowSprites == 0 {
 		return 0, 0
 	}
-	for i := 0; i < ppu.spriteCount; i++ {
-		offset := (ppu.Cycle - 1) - int(ppu.spritePositions[i])
+	for i := 0; i < this.spriteCount; i++ {
+		offset := (this.Cycle - 1) - int(this.spritePositions[i])
 		if offset < 0 || offset > 7 {
 			continue
 		}
 		offset = 7 - offset
-		color := byte((ppu.spritePatterns[i] >> byte(offset*4)) & 0x0F)
+		color := byte((this.spritePatterns[i] >> byte(offset*4)) & 0x0F)
 		if color%4 == 0 {
 			continue
 		}
@@ -435,15 +435,15 @@ func (ppu *PPU) spritePixel() (byte, byte) {
 	return 0, 0
 }
 
-func (ppu *PPU) renderPixel() {
-	x := ppu.Cycle - 1
-	y := ppu.ScanLine
-	background := ppu.backgroundPixel()
-	i, sprite := ppu.spritePixel()
-	if x < 8 && ppu.flagShowLeftBackground == 0 {
+func (this *PPU) renderPixel() {
+	x := this.Cycle - 1
+	y := this.ScanLine
+	background := this.backgroundPixel()
+	i, sprite := this.spritePixel()
+	if x < 8 && this.flagShowLeftBackground == 0 {
 		background = 0
 	}
-	if x < 8 && ppu.flagShowLeftSprites == 0 {
+	if x < 8 && this.flagShowLeftSprites == 0 {
 		sprite = 0
 	}
 	b := background%4 != 0
@@ -456,28 +456,28 @@ func (ppu *PPU) renderPixel() {
 	} else if b && !s {
 		color = background
 	} else {
-		if ppu.spriteIndexes[i] == 0 && x < 255 {
-			ppu.flagSpriteZeroHit = 1
+		if this.spriteIndexes[i] == 0 && x < 255 {
+			this.flagSpriteZeroHit = 1
 		}
-		if ppu.spritePriorities[i] == 0 {
+		if this.spritePriorities[i] == 0 {
 			color = sprite | 0x10
 		} else {
 			color = background
 		}
 	}
-	c := Palette[ppu.readPalette(uint16(color))%64]
-	ppu.back.SetRGBA(x, y, c)
+	c := Palette[this.readPalette(uint16(color))%64]
+	this.back.SetRGBA(x, y, c)
 }
 
-func (ppu *PPU) fetchSpritePattern(i, row int) uint32 {
-	tile := ppu.oamData[i*4+1]
-	attributes := ppu.oamData[i*4+2]
+func (this *PPU) fetchSpritePattern(i, row int) uint32 {
+	tile := this.oamData[i*4+1]
+	attributes := this.oamData[i*4+2]
 	var address uint16
-	if ppu.flagSpriteSize == 0 {
+	if this.flagSpriteSize == 0 {
 		if attributes&0x80 == 0x80 {
 			row = 7 - row
 		}
-		table := ppu.flagSpriteTable
+		table := this.flagSpriteTable
 		address = 0x1000*uint16(table) + uint16(tile)*16 + uint16(row)
 	} else {
 		if attributes&0x80 == 0x80 {
@@ -492,8 +492,8 @@ func (ppu *PPU) fetchSpritePattern(i, row int) uint32 {
 		address = 0x1000*uint16(table) + uint16(tile)*16 + uint16(row)
 	}
 	a := (attributes & 3) << 2
-	lowTileByte := ppu.Read(address)
-	highTileByte := ppu.Read(address + 8)
+	lowTileByte := this.Read(address)
+	highTileByte := this.Read(address + 8)
 	var data uint32
 	for i := 0; i < 8; i++ {
 		var p1, p2 byte
@@ -514,134 +514,134 @@ func (ppu *PPU) fetchSpritePattern(i, row int) uint32 {
 	return data
 }
 
-func (ppu *PPU) evaluateSprites() {
+func (this *PPU) evaluateSprites() {
 	var h int
-	if ppu.flagSpriteSize == 0 {
+	if this.flagSpriteSize == 0 {
 		h = 8
 	} else {
 		h = 16
 	}
 	count := 0
 	for i := 0; i < 64; i++ {
-		y := ppu.oamData[i*4+0]
-		a := ppu.oamData[i*4+2]
-		x := ppu.oamData[i*4+3]
-		row := ppu.ScanLine - int(y)
+		y := this.oamData[i*4+0]
+		a := this.oamData[i*4+2]
+		x := this.oamData[i*4+3]
+		row := this.ScanLine - int(y)
 		if row < 0 || row >= h {
 			continue
 		}
 		if count < 8 {
-			ppu.spritePatterns[count] = ppu.fetchSpritePattern(i, row)
-			ppu.spritePositions[count] = x
-			ppu.spritePriorities[count] = (a >> 5) & 1
-			ppu.spriteIndexes[count] = byte(i)
+			this.spritePatterns[count] = this.fetchSpritePattern(i, row)
+			this.spritePositions[count] = x
+			this.spritePriorities[count] = (a >> 5) & 1
+			this.spriteIndexes[count] = byte(i)
 		}
 		count++
 	}
 	if count > 8 {
 		count = 8
-		ppu.flagSpriteOverflow = 1
+		this.flagSpriteOverflow = 1
 	}
-	ppu.spriteCount = count
+	this.spriteCount = count
 }
 
 // tick updates Cycle, ScanLine and Frame counters
-func (ppu *PPU) tick() {
-	if ppu.nmiDelay > 0 {
-		ppu.nmiDelay--
-		if ppu.nmiDelay == 0 && ppu.nmiOutput && ppu.nmiOccurred {
-			ppu.console.CPU.triggerNMI()
+func (this *PPU) tick() {
+	if this.nmiDelay > 0 {
+		this.nmiDelay--
+		if this.nmiDelay == 0 && this.nmiOutput && this.nmiOccurred {
+			this.console.CPU.triggerNMI()
 		}
 	}
 
-	if ppu.flagShowBackground != 0 || ppu.flagShowSprites != 0 {
-		if ppu.f == 1 && ppu.ScanLine == 261 && ppu.Cycle == 339 {
-			ppu.Cycle = 0
-			ppu.ScanLine = 0
-			ppu.Frame++
-			ppu.f ^= 1
+	if this.flagShowBackground != 0 || this.flagShowSprites != 0 {
+		if this.f == 1 && this.ScanLine == 261 && this.Cycle == 339 {
+			this.Cycle = 0
+			this.ScanLine = 0
+			this.Frame++
+			this.f ^= 1
 			return
 		}
 	}
-	ppu.Cycle++
-	if ppu.Cycle > 340 {
-		ppu.Cycle = 0
-		ppu.ScanLine++
-		if ppu.ScanLine > 261 {
-			ppu.ScanLine = 0
-			ppu.Frame++
-			ppu.f ^= 1
+	this.Cycle++
+	if this.Cycle > 340 {
+		this.Cycle = 0
+		this.ScanLine++
+		if this.ScanLine > 261 {
+			this.ScanLine = 0
+			this.Frame++
+			this.f ^= 1
 		}
 	}
 }
 
 // Step executes a single PPU cycle
-func (ppu *PPU) Step() {
-	ppu.tick()
+func (this *PPU) Step() {
+	this.tick()
 
-	renderingEnabled := ppu.flagShowBackground != 0 || ppu.flagShowSprites != 0
-	preLine := ppu.ScanLine == 261
-	visibleLine := ppu.ScanLine < 240
-	// postLine := ppu.ScanLine == 240
+	renderingEnabled := this.flagShowBackground != 0 || this.flagShowSprites != 0
+	preLine := this.ScanLine == 261
+	visibleLine := this.ScanLine < 240
+	// postLine := this.ScanLine == 240
 	renderLine := preLine || visibleLine
-	preFetchCycle := ppu.Cycle >= 321 && ppu.Cycle <= 336
-	visibleCycle := ppu.Cycle >= 1 && ppu.Cycle <= 256
+	preFetchCycle := this.Cycle >= 321 && this.Cycle <= 336
+	visibleCycle := this.Cycle >= 1 && this.Cycle <= 256
 	fetchCycle := preFetchCycle || visibleCycle
 
 	// background logic
 	if renderingEnabled {
 		if visibleLine && visibleCycle {
-			ppu.renderPixel()
+			this.renderPixel()
 		}
 		if renderLine && fetchCycle {
-			ppu.tileData <<= 4
-			switch ppu.Cycle % 8 {
+			this.tileData <<= 4
+			switch this.Cycle % 8 {
 			case 1:
-				ppu.fetchNameTableByte()
+				this.fetchNameTableByte()
 			case 3:
-				ppu.fetchAttributeTableByte()
+				this.fetchAttributeTableByte()
 			case 5:
-				ppu.fetchLowTileByte()
+				this.fetchLowTileByte()
 			case 7:
-				ppu.fetchHighTileByte()
+				this.fetchHighTileByte()
 			case 0:
-				ppu.storeTileData()
+				this.storeTileData()
 			}
 		}
-		if preLine && ppu.Cycle >= 280 && ppu.Cycle <= 304 {
-			ppu.copyY()
+		if preLine && this.Cycle >= 280 && this.Cycle <= 304 {
+			this.copyY()
 		}
 		if renderLine {
-			if fetchCycle && ppu.Cycle%8 == 0 {
-				ppu.incrementX()
+			if fetchCycle && this.Cycle%8 == 0 {
+				this.incrementX()
 			}
-			if ppu.Cycle == 256 {
-				ppu.incrementY()
+			if this.Cycle == 256 {
+				this.incrementY()
 			}
-			if ppu.Cycle == 257 {
-				ppu.copyX()
+			if this.Cycle == 257 {
+				this.copyX()
 			}
 		}
 	}
 
 	// sprite logic
 	if renderingEnabled {
-		if ppu.Cycle == 257 {
+		if this.Cycle == 257 {
 			if visibleLine {
-				ppu.evaluateSprites()
+				this.evaluateSprites()
 			} else {
-				ppu.spriteCount = 0
+				this.spriteCount = 0
 			}
 		}
 	}
 
 	// vblank logic
-	if ppu.ScanLine == 241 && ppu.Cycle == 1 {
-		ppu.setVerticalBlank()
+	if this.ScanLine == 241 && this.Cycle == 1 {
+		this.setVerticalBlank()
 	}
-	if preLine && ppu.Cycle == 1 {
-		ppu.clearVerticalBlank()
-		ppu.flagSpriteZeroHit = 0
-		ppu.flagSpriteOverflow = 0
+	if preLine && this.Cycle == 1 {
+		this.clearVerticalBlank()
+		this.flagSpriteZeroHit = 0
+		this.flagSpriteOverflow = 0
 	}
 }

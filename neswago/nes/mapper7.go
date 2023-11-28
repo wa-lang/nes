@@ -9,40 +9,40 @@ func NewMapper7(cartridge *Cartridge) Mapper {
 	return &Mapper7{cartridge, 0}
 }
 
-func (m *Mapper7) Step() {
+func (this *Mapper7) Step() {
 }
 
-func (m *Mapper7) Read(address uint16) byte {
+func (this *Mapper7) Read(address uint16) byte {
 	switch {
 	case address < 0x2000:
-		return m.CHR[address]
+		return this.CHR[address]
 	case address >= 0x8000:
-		index := m.prgBank*0x8000 + int(address-0x8000)
-		return m.PRG[index]
+		index := this.prgBank*0x8000 + int(address-0x8000)
+		return this.PRG[index]
 	case address >= 0x6000:
 		index := int(address) - 0x6000
-		return m.SRAM[index]
+		return this.SRAM[index]
 	default:
 		log_Fatalf("unhandled mapper7 read at address: 0x%04X", address)
 	}
 	return 0
 }
 
-func (m *Mapper7) Write(address uint16, value byte) {
+func (this *Mapper7) Write(address uint16, value byte) {
 	switch {
 	case address < 0x2000:
-		m.CHR[address] = value
+		this.CHR[address] = value
 	case address >= 0x8000:
-		m.prgBank = int(value & 7)
+		this.prgBank = int(value & 7)
 		switch value & 0x10 {
 		case 0x00:
-			m.Cartridge.Mirror = MirrorSingle0
+			this.Cartridge.Mirror = MirrorSingle0
 		case 0x10:
-			m.Cartridge.Mirror = MirrorSingle1
+			this.Cartridge.Mirror = MirrorSingle1
 		}
 	case address >= 0x6000:
 		index := int(address) - 0x6000
-		m.SRAM[index] = value
+		this.SRAM[index] = value
 	default:
 		log_Fatalf("unhandled mapper7 write at address: 0x%04X", address)
 	}
