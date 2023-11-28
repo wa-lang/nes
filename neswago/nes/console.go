@@ -2,7 +2,6 @@ package nes
 
 import (
 	"image"
-	"image/color"
 )
 
 type Console struct {
@@ -72,10 +71,6 @@ func (console *Console) StepSeconds(seconds float64) {
 
 func (console *Console) Buffer() *image.RGBA {
 	return console.PPU.front
-}
-
-func (console *Console) BackgroundColor() color.RGBA {
-	return Palette[console.PPU.readPalette(0)%64]
 }
 
 func (console *Console) SetButtons1(buttons [8]bool) {

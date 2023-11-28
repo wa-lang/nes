@@ -1,7 +1,5 @@
 package nes
 
-import "log"
-
 type Memory interface {
 	Read(address uint16) byte
 	Write(address uint16, value byte)
@@ -63,7 +61,7 @@ func (mem *cpuMemory) Write(address uint16, value byte) {
 	case address >= 0x6000:
 		mem.console.Mapper.Write(address, value)
 	default:
-		log.Fatalf("unhandled cpu memory write at address: 0x%04X", address)
+		log_Fatalf("unhandled cpu memory write at address: 0x%04X", address)
 	}
 }
 
@@ -88,7 +86,7 @@ func (mem *ppuMemory) Read(address uint16) byte {
 	case address < 0x4000:
 		return mem.console.PPU.readPalette(address % 32)
 	default:
-		log.Fatalf("unhandled ppu memory read at address: 0x%04X", address)
+		log_Fatalf("unhandled ppu memory read at address: 0x%04X", address)
 	}
 	return 0
 }
@@ -104,7 +102,7 @@ func (mem *ppuMemory) Write(address uint16, value byte) {
 	case address < 0x4000:
 		mem.console.PPU.writePalette(address%32, value)
 	default:
-		log.Fatalf("unhandled ppu memory write at address: 0x%04X", address)
+		log_Fatalf("unhandled ppu memory write at address: 0x%04X", address)
 	}
 }
 

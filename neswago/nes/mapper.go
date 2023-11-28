@@ -1,7 +1,5 @@
 package nes
 
-import "errors"
-
 type Mapper interface {
 	Read(address uint16) byte
 	Write(address uint16, value byte)
@@ -28,6 +26,6 @@ func NewMapper(console *Console) (Mapper, error) {
 	case 225:
 		return NewMapper225(cartridge), nil
 	}
-	err := errors.New("unsupported mapper: " + byte2str(cartridge.Mapper))
+	err := errors_New("unsupported mapper: " + byte2str(cartridge.Mapper))
 	return nil, err
 }

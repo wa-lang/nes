@@ -3,7 +3,6 @@ package nes
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"io"
 )
 
@@ -33,7 +32,7 @@ func LoadNESFile(romBytes []byte) (*Cartridge, error) {
 
 	// verify header magic number
 	if header.Magic != iNESFileMagic {
-		return nil, errors.New("invalid .nes file")
+		return nil, errors_New("invalid .nes file")
 	}
 
 	// mapper type

@@ -1,8 +1,6 @@
 package nes
 
-import "image/color"
-
-var Palette [64]color.RGBA
+var Palette [64]color_RGBA
 
 func init() {
 	colors := []uint32{
@@ -19,6 +17,6 @@ func init() {
 		r := byte(c >> 16)
 		g := byte(c >> 8)
 		b := byte(c)
-		Palette[i] = color.RGBA{r, g, b, 0xFF}
+		Palette[i] = color_RGBA{r, g, b, 0xFF}
 	}
 }

@@ -1,9 +1,6 @@
 package ui
 
 import (
-	"log"
-
-	"github.com/fogleman/nes/nes"
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
@@ -35,12 +32,7 @@ func (d *Director) Run(name string, romBytes []byte) {
 }
 
 func (d *Director) playGame(name string, romBytes []byte) {
-	console, err := nes.NewConsole(name, romBytes)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	d.gameView = NewGameView(d, console, name)
+	d.gameView = NewGameView(d, name, romBytes)
 	d.gameView.Enter()
 	d.timestamp = glfw.GetTime()
 }

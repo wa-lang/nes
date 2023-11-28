@@ -2,6 +2,7 @@ package ui
 
 import (
 	"image"
+	"log"
 
 	"github.com/fogleman/nes/nes"
 
@@ -20,7 +21,12 @@ type GameView struct {
 	frames   []image.Image
 }
 
-func NewGameView(director *Director, console *nes.Console, title string) *GameView {
+func NewGameView(director *Director, title string, romBytes []byte) *GameView {
+	console, err := nes.NewConsole(title, romBytes)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	texture := createTexture()
 	return &GameView{director, console, title, texture, false, nil}
 }
