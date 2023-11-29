@@ -1,16 +1,55 @@
 // 版权 @2023 nes-wa 作者。保留所有权利。
 
-import "myapp/nes" => _
+import "myapp/nes"
 
 func main {
-	println("你好，凹语言！")
-	println(sum(100))
+	println("你好, 凹语言 + NES")
 }
 
-func sum(n: int) => int {
-	v: int
-	for i := 1; i <= n; i++ {
-		v += i
+global console: *nes.Console = nil
+
+// 测试用
+func SayHello {
+	println("SayHello")
+}
+
+// 初始化调用
+func NES_InitGame(name: string, romBytes: []byte) {
+	if console != nil {
+		panic("init twice")
 	}
-	return v
+	c, err := nes.NewConsole(name, romBytes)
+	if err != nil {
+		panic("NES_InitGame failed")
+	}
+	console = c
+}
+
+// 玩家1 键盘调用
+func NES_SetButtons1(btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight: bool) {
+	console.SetButtons1([8]bool{
+		btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight,
+	})
+}
+
+// 玩家2 键盘调用
+func NES_SetButtons2(btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight: bool) {
+	console.SetButtons2([8]bool{
+		btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight,
+	})
+}
+
+// 执行一定时间
+func NES_StepSeconds(dt: f64) {
+	console.StepSeconds(dt)
+}
+
+// 获取缓存图像数据
+func NES_GetBuffer_Pix => []byte {
+	return console.Buffer().Pix
+}
+
+// 获取缓存图像每行字节长度
+func NES_GetBuffer_Stride => int {
+	return console.Buffer().Stride
 }

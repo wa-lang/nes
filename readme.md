@@ -17,6 +17,65 @@
 
 从代码量/本地测试/Star数量等考虑, 暂定从 `fogleman/nes` 开始移植. 同时也希望能对该实现进行充分测试.
 
+## NES API 使用
+
+```wa
+type Console struct {
+	CPU         :*CPU
+	APU         :*APU
+	PPU         :*PPU
+	Cartridge   :*Cartridge
+	Controller1 :*Controller
+	Controller2 :*Controller
+	Mapper      :Mapper
+	RAM         :[]byte
+}
+
+func NewConsole(romBytes: []byte) => (*Console, error)
+func Console.Buffer() => *image.RGBA
+func Console.Reset()
+func Console.SetButtons1(buttons: [8]bool)
+func Console.SetButtons2(buttons: [8]bool)
+func Console.Step() => int
+func Console.StepFrame() => int
+func Console.StepSeconds(seconds: f64)
+```
+
+使用流程如下：
+
+```wa
+import "myapp/nes"
+
+global console: *nes.Console = nil
+
+// 初始化调用
+func NES_InitGame(romBytes: []byte) {
+	console := nes.NewConsole(romBytes)
+}
+
+// 玩家1 键盘调用
+func NES_SetButtons1(btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight: bool) {
+	console.SetButtons1([8]bool{
+		btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight,
+	})
+}
+
+// 玩家2 键盘调用
+func NES_SetButtons2(btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight: bool) {
+	console.SetButtons2([8]bool{
+		btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight,
+	})
+}
+
+// 执行一定时间
+func NES_StepSeconds(dt: f64) {
+	console.StepSeconds(dt)
+
+	// TODO: 绘制缓存
+	// console.Buffer()
+}
+```
+
 ## NES 游戏文件下载
 
 - https://github.com/dream1986/nesrom
