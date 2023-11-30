@@ -26,5 +26,14 @@ canvas: new function() {
     ctx.fillRect(x, y, w, h);
   }
 
+  this.put_image_data = (ctx_handle, x, y, w, h, buf_b, buf_d, buf_l, buf_c) => {
+    if (ctx_handle == 0) return;
+
+    const ctx = app._extobj.get_obj(ctx_handle);
+    const buf = new Uint8ClampedArray(app._mem_util.mem().buffer, buf_d, buf_l);
+    const image = new ImageData(buf, w, h);
+    ctx.putImageData(image, x, y);
+  }
+
   app._canvas = this;
 },

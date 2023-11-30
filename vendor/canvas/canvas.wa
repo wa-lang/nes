@@ -48,6 +48,16 @@ func Context2D.FillRect(x, y, w, h: i32) {
 }
 
 /*
+向 ctx 写入图片
+(x, y): 写入起点
+(w, h)：图片长宽，以像素为单位
+buf：图片 RGBA 格式缓冲，容量必须为 w*h*4 字节
+*/
+func Context2D.PutImageData(x, y, w, h: i32, buf :[]u8) {
+    jsPutImageData(this.GetHandle(), x, y, w, h, buf)
+}
+
+/*
     c, _ := canvas.QueryCanvas("#canvas")
     ctx, _ := c.GetContext2D()
 
