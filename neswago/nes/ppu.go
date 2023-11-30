@@ -5,8 +5,8 @@ import (
 )
 
 type PPU struct {
-	Memory           // memory interface
-	console *Console // reference to parent object
+	*PPUMemory          // memory
+	console    *Console // reference to parent object
 
 	Cycle    int    // 0-340
 	ScanLine int    // 0-261, 0-239=visible, 240=post, 241-260=vblank, 261=pre
@@ -78,7 +78,7 @@ type PPU struct {
 }
 
 func NewPPU(console *Console) *PPU {
-	this := &PPU{Memory: NewPPUMemory(console), console: console}
+	this := &PPU{PPUMemory: NewPPUMemory(console), console: console}
 	this.front = image.NewRGBA(image.Rect(0, 0, 256, 240))
 	this.back = image.NewRGBA(image.Rect(0, 0, 256, 240))
 	this.Reset()

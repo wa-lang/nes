@@ -1,21 +1,16 @@
 package nes
 
-type Memory interface {
-	Read(address uint16) byte
-	Write(address uint16, value byte)
-}
-
 // CPU Memory Map
 
-type cpuMemory struct {
+type CPUMemory struct {
 	console *Console
 }
 
-func NewCPUMemory(console *Console) Memory {
-	return &cpuMemory{console}
+func NewCPUMemory(console *Console) *CPUMemory {
+	return &CPUMemory{console}
 }
 
-func (this *cpuMemory) Read(address uint16) byte {
+func (this *CPUMemory) Read(address uint16) byte {
 	switch {
 	case address < 0x2000:
 		return this.console.RAM[address%0x0800]
@@ -39,7 +34,7 @@ func (this *cpuMemory) Read(address uint16) byte {
 	return 0
 }
 
-func (this *cpuMemory) Write(address uint16, value byte) {
+func (this *CPUMemory) Write(address uint16, value byte) {
 	switch {
 	case address < 0x2000:
 		this.console.RAM[address%0x0800] = value
@@ -67,15 +62,15 @@ func (this *cpuMemory) Write(address uint16, value byte) {
 
 // PPU Memory Map
 
-type ppuMemory struct {
+type PPUMemory struct {
 	console *Console
 }
 
-func NewPPUMemory(console *Console) Memory {
-	return &ppuMemory{console}
+func NewPPUMemory(console *Console) *PPUMemory {
+	return &PPUMemory{console}
 }
 
-func (this *ppuMemory) Read(address uint16) byte {
+func (this *PPUMemory) Read(address uint16) byte {
 	address = address % 0x4000
 	switch {
 	case address < 0x2000:
@@ -91,7 +86,7 @@ func (this *ppuMemory) Read(address uint16) byte {
 	return 0
 }
 
-func (this *ppuMemory) Write(address uint16, value byte) {
+func (this *PPUMemory) Write(address uint16, value byte) {
 	address = address % 0x4000
 	switch {
 	case address < 0x2000:
