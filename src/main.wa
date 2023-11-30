@@ -81,13 +81,3 @@ func NES_StepSeconds(dt: f64) {
 
 	ctx.PutImageData(0, 0, 256, 240, console.Buffer().Pix)
 }
-
-// 获取缓存图像数据
-func NES_GetBuffer_Pix => []byte {
-	return console.Buffer().Pix
-}
-
-// 获取缓存图像每行字节长度
-func NES_GetBuffer_Stride => int {
-	return console.Buffer().Stride
-}

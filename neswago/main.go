@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/fogleman/nes/nes"
 	"github.com/fogleman/nes/ui"
 )
 
@@ -45,6 +46,11 @@ func main() {
 		return
 	}
 
-	game := allGames[*flagIndex]
-	ui.Main(game.Name, game.Data)
+	if i := *flagIndex; i < 0 || i >= len(allGames) {
+		fmt.Println("use nes.BattleCity_nes")
+		ui.Main("BattleCity", []byte(nes.BattleCity_nes))
+	} else {
+		game := allGames[*flagIndex]
+		ui.Main(game.Name, game.Data)
+	}
 }

@@ -1,3 +1,4 @@
 /output/*.wat
 /output/*.wasm
+/output/nes.js
 
