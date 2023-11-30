@@ -19,6 +19,8 @@
   app.init().then((result) => {
     app.main();
 
+    app.NES_InitGame();
+
     let preTimeStamp;
     let stepAnima = function (timeStamp) {
       // 转化为秒为单位
@@ -27,13 +29,18 @@
       } else {
         timeStamp = 0;
       }
+
+      // 记录当前时间
       if (!preTimeStamp) {
         preTimeStamp = timeStamp;
       }
 
+      // 时间间隔
+      let dt = timeStamp - preTimeStamp;
+      console.log(`nes.html: dt = ${dt}`);
+
       // 执行
-      app.NES_StepSeconds(timeStamp - preTimeStamp);
-      console.log(timeStamp);
+      app.NES_StepSeconds(dt);
       preTimeStamp = timeStamp;
       window.requestAnimationFrame(stepAnima);
     }

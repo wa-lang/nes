@@ -35,14 +35,17 @@ func main {
 }
 
 // 初始化调用
-func NES_InitGame(name: string, romBytes: []byte) {
+func NES_InitGame {
 	if console != nil {
 		panic("init twice")
 	}
+	romBytes := []byte(nes.BattleCity_nes)
 	c, err := nes.NewConsole(romBytes)
 	if err != nil {
 		panic("NES_InitGame failed")
 	}
+
+	println("NES_InitGame nes.BattleCity_nes ok")
 	console = c
 }
 
@@ -62,13 +65,18 @@ func NES_SetButtons2(btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, b
 
 // 执行一定时间
 func NES_StepSeconds(dt: f64) {
+	println("NES_StepSeconds dt=", dt)
+
 	if dt > 1 {
 		dt = 0
 	}
 	if dt == 0 {
 		return
 	}
+
+	// 执行失败
 	console.StepSeconds(dt)
+	println("NES_StepSeconds console.StepSeconds ok")
 
 	c, ok := canvas.QueryCanvas("#canvas")
 	if !ok {
