@@ -136,7 +136,7 @@ global instructionNames = [256]string{
 }
 
 type CPU struct {
-	Memory
+	*CPUMemory
 	Cycles:    uint64
 	PC:        uint16
 	SP:        byte
@@ -157,7 +157,7 @@ type CPU struct {
 }
 
 func NewCPU(console: *Console) => *CPU {
-	this := &CPU{Memory: NewCPUMemory(console)}
+	this := &CPU{CPUMemory: NewCPUMemory(console)}
 	this.createTable()
 	this.Reset()
 	return this
