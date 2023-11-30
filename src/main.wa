@@ -9,7 +9,7 @@ global console: *nes.Console = nil
 func main {
 	println("你好, 凹语言 + NES")
 
-	c, ok := canvas.QueryCanvas("#nes")
+	c, ok := canvas.QueryCanvas("#canvas")
 	if !ok {
 		return
 	}
@@ -78,7 +78,7 @@ func NES_StepSeconds(dt: f64) {
 	console.StepSeconds(dt)
 	println("NES_StepSeconds console.StepSeconds ok")
 
-	c, ok := canvas.QueryCanvas("#canvas")
+	c, ok := canvas.QueryCanvas("#nes")
 	if !ok {
 		return
 	}
