@@ -2,7 +2,15 @@
 
 <title>myapp</title>
 
-<canvas id="nes" tabindex="0"></canvas>
+<div>
+  <h2>Canvas:<h2>
+  <canvas id="canvas" width="256" height="256"></canvas>
+</div>
+
+<div>
+  <h2>NES:<h2>
+  <canvas id="nes" width="256" height="240"></canvas>
+</div>
 
 <script type="text/javascript" src="./nes.js"></script>
 
@@ -10,38 +18,5 @@
   let app = new WaApp();
   app.init().then((result) => {
     app.main();
-
-    let canvas = document.getElementById("nes");
-    canvas.width = 256*3;
-    canvas.height = 240*3;
-    canvas.id = 0;  //!!!!!
-
-    let ctx = canvas.getContext("2d");
-    ctx.rect(20,20,150,100);
-    ctx.fillStyle="green";
-    ctx.fill();
-
-    canvas.addEventListener("keydown", (event) => {
-      console.log(`keydown: key=${event.keyCode}`)
-    }, true);
-
-    canvas.addEventListener("keyup", (event) => {
-      console.log(`keyup: key=${event.keyCode}`)
-    }, true);
-
-
-    app.SayHello();
-
-    // myapp.NES_InitGame("NES", romBytes)
-
-    // NES_SetButtons1
-    // NES_SetButtons2
-    // NES_StepSeconds
-
-    // NES_GetBuffer_Pix
-    // NES_GetBuffer_Stride
   })
 </script>
-
-<!--
--->

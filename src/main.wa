@@ -1,16 +1,37 @@
 // 版权 @2023 nes-wa 作者。保留所有权利。
 
+import "canvas"
 import "myapp/nes"
+
+// NES 控制器
+global console: *nes.Console = nil
 
 func main {
 	println("你好, 凹语言 + NES")
-}
 
-global console: *nes.Console = nil
+	c, ok := canvas.QueryCanvas("#nes")
+	if !ok {
+		return
+	}
+	ctx, ok := c.GetContext2D()
+	if !ok {
+		return
+	}
 
-// 测试用
-func SayHello {
-	println("SayHello")
+	buf := make([]u8, 256*256*4)
+	for x := 0; x < 256; x++ {
+		for y := 0; y < 256; y++ {
+			buf[(y*256+x)*4+0] = u8(x)
+			buf[(y*256+x)*4+1] = u8(x)
+			buf[(y*256+x)*4+2] = u8(y)
+			buf[(y*256+x)*4+3] = 255
+		}
+	}
+
+	ctx.PutImageData(0, 0, 256, 256, buf)
+
+	ctx.SetFillStyle("green")
+	ctx.FillRect(10, 10, 50, 50)
 }
 
 // 初始化调用
@@ -18,7 +39,7 @@ func NES_InitGame(name: string, romBytes: []byte) {
 	if console != nil {
 		panic("init twice")
 	}
-	c, err := nes.NewConsole(name, romBytes)
+	c, err := nes.NewConsole(romBytes)
 	if err != nil {
 		panic("NES_InitGame failed")
 	}
@@ -41,7 +62,24 @@ func NES_SetButtons2(btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, b
 
 // 执行一定时间
 func NES_StepSeconds(dt: f64) {
+	if dt > 1 {
+		dt = 0
+	}
+	if dt == 0 {
+		return
+	}
 	console.StepSeconds(dt)
+
+	c, ok := canvas.QueryCanvas("#canvas")
+	if !ok {
+		return
+	}
+	ctx, ok := c.GetContext2D()
+	if !ok {
+		return
+	}
+
+	ctx.PutImageData(0, 0, 256, 240, console.Buffer().Pix)
 }
 
 // 获取缓存图像数据
