@@ -1,0 +1,165 @@
+type Mapper1 struct {
+	*Cartridge
+	shiftRegister: byte
+	control:       byte
+	prgMode:       byte
+	chrMode:       byte
+	prgBank:       byte
+	chrBank0:      byte
+	chrBank1:      byte
+	prgOffsets:    [2]int
+	chrOffsets:    [2]int
+}
+
+func NewMapper1(cartridge: *Cartridge) => Mapper {
+	this := &Mapper1{}
+	this.Cartridge = cartridge
+	this.shiftRegister = 0x10
+	this.prgOffsets[1] = this.prgBankOffset(-1)
+	return this
+}
+
+func Mapper1.Step() {
+}
+
+func Mapper1.Read(address: uint16) => byte {
+	switch {
+	case address < 0x2000:
+		bank := address / 0x1000
+		offset := address % 0x1000
+		return this.CHR[this.chrOffsets[bank]+int(offset)]
+	case address >= 0x8000:
+		address = address - 0x8000
+		bank := address / 0x4000
+		offset := address % 0x4000
+		return this.PRG[this.prgOffsets[bank]+int(offset)]
+	case address >= 0x6000:
+		return this.SRAM[int(address)-0x6000]
+	default:
+		log_Fatalf("unhandled mapper1 read at address: 0x%04X", address)
+	}
+	return 0
+}
+
+func Mapper1.Write(address: uint16, value: byte) {
+	switch {
+	case address < 0x2000:
+		bank := address / 0x1000
+		offset := address % 0x1000
+		this.CHR[this.chrOffsets[bank]+int(offset)] = value
+	case address >= 0x8000:
+		this.loadRegister(address, value)
+	case address >= 0x6000:
+		this.SRAM[int(address)-0x6000] = value
+	default:
+		log_Fatalf("unhandled mapper1 write at address: 0x%04X", address)
+	}
+}
+
+func Mapper1.loadRegister(address: uint16, value: byte) {
+	if value&0x80 == 0x80 {
+		this.shiftRegister = 0x10
+		this.writeControl(this.control | 0x0C)
+	} else {
+		complete := this.shiftRegister&1 == 1
+		this.shiftRegister >>= 1
+		this.shiftRegister |= (value & 1) << 4
+		if complete {
+			this.writeRegister(address, this.shiftRegister)
+			this.shiftRegister = 0x10
+		}
+	}
+}
+
+func Mapper1.writeRegister(address: uint16, value: byte) {
+	switch {
+	case address <= 0x9FFF:
+		this.writeControl(value)
+	case address <= 0xBFFF:
+		this.writeCHRBank0(value)
+	case address <= 0xDFFF:
+		this.writeCHRBank1(value)
+	case address <= 0xFFFF:
+		this.writePRGBank(value)
+	}
+}
+
+func Mapper1.writeControl(value: byte) {
+	this.control = value
+	this.chrMode = (value >> 4) & 1
+	this.prgMode = (value >> 2) & 3
+	mirror := value & 3
+	switch mirror {
+	case 0:
+		this.Cartridge.Mirror = MirrorSingle0
+	case 1:
+		this.Cartridge.Mirror = MirrorSingle1
+	case 2:
+		this.Cartridge.Mirror = MirrorVertical
+	case 3:
+		this.Cartridge.Mirror = MirrorHorizontal
+	}
+	this.updateOffsets()
+}
+
+func Mapper1.writeCHRBank0(value: byte) {
+	this.chrBank0 = value
+	this.updateOffsets()
+}
+
+func Mapper1.writeCHRBank1(value: byte) {
+	this.chrBank1 = value
+	this.updateOffsets()
+}
+
+func Mapper1.writePRGBank(value: byte) {
+	this.prgBank = value & 0x0F
+	this.updateOffsets()
+}
+
+func Mapper1.prgBankOffset(index: int) => int {
+	if index >= 0x80 {
+		index -= 0x100
+	}
+	index %= len(this.PRG) / 0x4000
+	offset := index * 0x4000
+	if offset < 0 {
+		offset += len(this.PRG)
+	}
+	return offset
+}
+
+func Mapper1.chrBankOffset(index: int) => int {
+	if index >= 0x80 {
+		index -= 0x100
+	}
+	index %= len(this.CHR) / 0x1000
+	offset := index * 0x1000
+	if offset < 0 {
+		offset += len(this.CHR)
+	}
+	return offset
+}
+
+func Mapper1.updateOffsets() {
+	switch this.prgMode {
+	case 0, 1:
+		this.prgOffsets[0] = this.prgBankOffset(int(this.prgBank & 0xFE))
+		this.prgOffsets[1] = this.prgBankOffset(int(this.prgBank | 0x01))
+	case 2:
+		this.prgOffsets[0] = 0
+		this.prgOffsets[1] = this.prgBankOffset(int(this.prgBank))
+	case 3:
+		this.prgOffsets[0] = this.prgBankOffset(int(this.prgBank))
+		this.prgOffsets[1] = this.prgBankOffset(-1)
+	}
+	switch this.chrMode {
+	case 0:
+		this.chrOffsets[0] = this.chrBankOffset(int(this.chrBank0 & 0xFE))
+		this.chrOffsets[1] = this.chrBankOffset(int(this.chrBank0 | 0x01))
+	case 1:
+		this.chrOffsets[0] = this.chrBankOffset(int(this.chrBank0))
+		this.chrOffsets[1] = this.chrBankOffset(int(this.chrBank1))
+	}
+}
+

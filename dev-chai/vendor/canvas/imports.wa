@@ -1,0 +1,15 @@
+
+import "js"
+
+#wa:import canvas get_context2d
+func jsGetContext2D(canvas: js.Handle) => js.Handle
+
+#wa:import canvas set_fill_style
+func jsSetFillStyle(ctx: js.Handle, style: string)
+
+#wa:import canvas fill_rect
+func jsFillRect(ctx: js.Handle, x, y, w, h: i32)
+
+#wa:import canvas put_image_data
+func jsPutImageData(ctx: js.Handle, x, y, w, h: i32, buf :[]u8)
+

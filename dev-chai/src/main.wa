@@ -1,0 +1,38 @@
+// 版权 @2023 nes-wa 作者。保留所有权利。
+
+import "bytes"
+import "debug"
+import "image"
+import "image/bmp"
+import "strconv"
+import "myapp/nes"
+
+func main {
+	console, err := nes.NewConsole(nesRom_BattleCity[:])
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for i := 0; i < 20; i++ {
+		console.StepSeconds(0.5)
+		SaveBMP(i, console.Buffer())
+	}
+}
+
+func SaveBMP(idx: int, m: *image.RGBA) {
+	name: string
+	if idx < 10 {
+		name = "./output/0" + strconv.Itoa(idx) + ".bmp"
+
+	} else {
+		name = "./output/" + strconv.Itoa(idx) + ".bmp"
+
+	}
+
+	buf: bytes.Buffer
+	if err := bmp.Encode(&buf, m); err != nil {
+		panic(err.Error())
+	}
+
+	debug.WriteFile(name, buf.Bytes())
+}
