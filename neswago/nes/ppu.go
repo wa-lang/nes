@@ -144,6 +144,9 @@ func (this *PPU) writeRegister(address uint16, value byte) {
 
 // $2000: PPUCTRL
 func (this *PPU) writeControl(value byte) {
+	if Halt {
+		println("PPU.writeControl(), value:", value)
+	}
 	this.flagNameTable = (value >> 0) & 3
 	this.flagIncrement = (value >> 2) & 1
 	this.flagSpriteTable = (value >> 3) & 1
@@ -547,6 +550,10 @@ func (this *PPU) evaluateSprites() {
 
 // tick updates Cycle, ScanLine and Frame counters
 func (this *PPU) tick() {
+	if Halt {
+		println(this.nmiDelay, this.nmiOutput, this.nmiOccurred)
+		Halt = false
+	}
 	if this.nmiDelay > 0 {
 		this.nmiDelay--
 		if this.nmiDelay == 0 && this.nmiOutput && this.nmiOccurred {

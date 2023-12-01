@@ -167,6 +167,15 @@ type CPU struct {
 	table      [256]func(*stepInfo)
 }
 
+func (this *CPU) Dump() {
+	print("{ ", this.Cycles, " ", this.PC, " ", this.SP, " ", this.A, " ", this.X, " ", this.Y, " ", this.C, " ", this.Z, " ", this.I, " ", this.D, " ", this.B, " ", this.U, " ", this.V, " ", this.N, " ", this.interrupt, " ", this.stall, " }")
+	for _, v := range this.CPUMemory.console.RAM {
+		print(v)
+		print(" ")
+	}
+	println("")
+}
+
 func NewCPU(console *Console) *CPU {
 	this := &CPU{CPUMemory: NewCPUMemory(console)}
 	this.createTable()
@@ -355,6 +364,8 @@ type stepInfo struct {
 	mode    byte
 }
 
+var Halt bool
+
 // Step executes a single CPU instruction
 func (this *CPU) Step() int {
 	if this.stall > 0 {
@@ -420,6 +431,11 @@ func (this *CPU) Step() int {
 		this.Cycles += uint64(instructionPageCycles[opcode])
 	}
 	info := &stepInfo{address, this.PC, mode}
+
+	if Halt {
+		println(info.address, " ", info.pc, " ", info.mode, " ", instructionNames[opcode])
+	}
+
 	this.table[opcode](info)
 
 	return int(this.Cycles - cycles)
@@ -801,6 +817,9 @@ func (this *CPU) sei(info *stepInfo) {
 
 // STA - Store Accumulator
 func (this *CPU) sta(info *stepInfo) {
+	if Halt {
+		println("CPU.sta(), info.addr:", info.address, "this.A:", this.A)
+	}
 	this.Write(info.address, this.A)
 }
 

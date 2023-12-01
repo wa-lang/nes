@@ -314,7 +314,7 @@ func PPU.nmiChange() {
 }
 
 func PPU.setVerticalBlank() {
-	println("FrameBuf Swap")
+	//println("FrameBuf Swap")
 	this.front, this.back = this.back, this.front
 	this.nmiOccurred = true
 	this.nmiChange()
@@ -513,6 +513,12 @@ func PPU.evaluateSprites() {
 }
 
 func PPU.tick() {
+	if Halt {
+		println(this.nmiDelay, this.nmiOutput, this.nmiOccurred)
+		// 这里应该输出 0 true false
+		Halt = false
+	}
+
 	if this.nmiDelay > 0 {
 		this.nmiDelay--
 		if this.nmiDelay == 0 && this.nmiOutput && this.nmiOccurred {

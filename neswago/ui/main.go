@@ -60,6 +60,23 @@ func (d *AppWindow) Run(name string, romBytes []byte) {
 	}
 
 	d.console = console
+
+	console.StepFrame()
+	console.StepFrame()
+	console.StepFrame()
+	console.StepFrame()
+	console.StepFrame()
+	console.StepFrame()
+	console.StepFrame()
+	console.StepFrame()
+	for i := 0; i < 7793; i++ {
+		console.Step()
+	}
+	console.CPU.Dump()
+	nes.Halt = true
+	console.Step()
+	console.CPU.Dump()
+
 	d.texture = createTexture()
 
 	d.window.SetKeyCallback(d.OnKey)
