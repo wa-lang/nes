@@ -67,6 +67,7 @@ func NewAPU(console *Console) *APU {
 }
 
 func (this *APU) Step() {
+	return
 	cycle1 := this.cycle
 	this.cycle++
 	cycle2 := this.cycle

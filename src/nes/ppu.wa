@@ -314,6 +314,7 @@ func PPU.nmiChange() {
 }
 
 func PPU.setVerticalBlank() {
+	println("FrameBuf Swap")
 	this.front, this.back = this.back, this.front
 	this.nmiOccurred = true
 	this.nmiChange()
@@ -429,6 +430,9 @@ func PPU.renderPixel() {
 		}
 	}
 	c := Palette[this.readPalette(uint16(color))%64]
+
+	println(x, y, color)
+
 	this.back.SetRGBA(x, y, c)
 }
 
@@ -550,6 +554,8 @@ func PPU.Step() {
 	fetchCycle := preFetchCycle || visibleCycle
 
 	if renderingEnabled {
+		println("aaaa")
+
 		if visibleLine && visibleCycle {
 			this.renderPixel()
 		}
