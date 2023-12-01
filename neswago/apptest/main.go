@@ -17,7 +17,7 @@ func main() {
 	}
 
 	os.Mkdir("output", 0777)
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 20; i++ {
 		console.StepSeconds(0.5)
 		name := fmt.Sprintf("./output/%02d.png", i)
 		SavePng(name, console.Buffer())
