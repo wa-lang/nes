@@ -314,7 +314,6 @@ func PPU.nmiChange() {
 }
 
 func PPU.setVerticalBlank() {
-	//println("FrameBuf Swap")
 	this.front, this.back = this.back, this.front
 	this.nmiOccurred = true
 	this.nmiChange()
@@ -431,8 +430,6 @@ func PPU.renderPixel() {
 	}
 	c := Palette[this.readPalette(uint16(color))%64]
 
-	println(x, y, color)
-
 	this.back.SetRGBA(x, y, c)
 }
 
@@ -513,12 +510,6 @@ func PPU.evaluateSprites() {
 }
 
 func PPU.tick() {
-	if Halt {
-		println(this.nmiDelay, this.nmiOutput, this.nmiOccurred)
-		// 这里应该输出 0 true false
-		Halt = false
-	}
-
 	if this.nmiDelay > 0 {
 		this.nmiDelay--
 		if this.nmiDelay == 0 && this.nmiOutput && this.nmiOccurred {
@@ -560,8 +551,6 @@ func PPU.Step() {
 	fetchCycle := preFetchCycle || visibleCycle
 
 	if renderingEnabled {
-		println("aaaa")
-
 		if visibleLine && visibleCycle {
 			this.renderPixel()
 		}

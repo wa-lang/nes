@@ -333,8 +333,6 @@ func CPU.Dump() {
 	println("")
 }
 
-global Halt: bool
-
 func CPU.Step() => int {
 	if this.stall > 0 {
 		this.stall--
@@ -399,10 +397,6 @@ func CPU.Step() => int {
 		this.Cycles += uint64(instructionPageCycles[opcode])
 	}
 	info := &stepInfo{address, this.PC, mode}
-
-	if Halt {
-		println(info.address, info.pc, info.mode, instructionNames[opcode])
-	}
 
 	this.table[opcode](info)
 
@@ -735,9 +729,6 @@ func CPU.sei(info: *stepInfo) {
 }
 
 func CPU.sta(info: *stepInfo) {
-	//if Halt {
-	//	println("CPU.sta(), info.addr:", info.address, "this.A:", this.A)
-	//}
 	this.Write(info.address, this.A)
 }
 

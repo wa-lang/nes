@@ -51,32 +51,14 @@ func NES_InitGame {
 	console = c
 
 
-	//canvas_nes, ok := canvas.QueryCanvas("#nes")
-	//if !ok {
-	//	return
-	//}
-	//nes_ctx, ok = canvas_nes.GetContext2D()
-	//if !ok {
-	//	return
-	//}
-	
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-
-	for i := 0; i < 7793; i++ {
-		console.Step()
+	canvas_nes, ok := canvas.QueryCanvas("#nes")
+	if !ok {
+		return
 	}
-	console.CPU.Dump()
-
-	nes.Halt = true
-	console.Step()
-	//console.CPU.Dump()
+	nes_ctx, ok = canvas_nes.GetContext2D()
+	if !ok {
+		return
+	}
 }
 
 // 玩家1 键盘调用
@@ -106,9 +88,9 @@ func NES_StepSeconds(dt: f64) {
 
 	//console.StepSeconds(dt)
 	//println("NES_StepSeconds console.StepSeconds ok")
-//	console.StepFrame()
-//
-//	console.Buffer().Pix[0] = 255
-//	console.Buffer().Pix[3] = 255
-//	nes_ctx.PutImageData(0, 0, 256, 240, console.Buffer().Pix)
+	console.StepFrame()
+
+	console.Buffer().Pix[0] = 255
+	console.Buffer().Pix[3] = 255
+	nes_ctx.PutImageData(0, 0, 256, 240, console.Buffer().Pix)
 }
