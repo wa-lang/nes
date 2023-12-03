@@ -1,5 +1,4 @@
 type Mapper1 struct {
-	*Cartridge
 	shiftRegister: byte
 	control:       byte
 	prgMode:       byte
@@ -11,9 +10,8 @@ type Mapper1 struct {
 	chrOffsets:    [2]int
 }
 
-func NewMapper1(cartridge: *Cartridge) => Mapper {
+func NewMapper1() => Mapper {
 	this := &Mapper1{}
-	this.Cartridge = cartridge
 	this.shiftRegister = 0x10
 	this.prgOffsets[1] = this.prgBankOffset(-1)
 	return this
@@ -27,14 +25,14 @@ func Mapper1.Read(address: uint16) => byte {
 	case address < 0x2000:
 		bank := address / 0x1000
 		offset := address % 0x1000
-		return this.CHR[this.chrOffsets[bank]+int(offset)]
+		return Cartridge_CHR[this.chrOffsets[bank]+int(offset)]
 	case address >= 0x8000:
 		address = address - 0x8000
 		bank := address / 0x4000
 		offset := address % 0x4000
-		return this.PRG[this.prgOffsets[bank]+int(offset)]
+		return Cartridge_PRG[this.prgOffsets[bank]+int(offset)]
 	case address >= 0x6000:
-		return this.SRAM[int(address)-0x6000]
+		return Cartridge_SRAM[int(address)-0x6000]
 	default:
 		log_Fatalf("unhandled mapper1 read at address: 0x%04X", address)
 	}
@@ -46,11 +44,11 @@ func Mapper1.Write(address: uint16, value: byte) {
 	case address < 0x2000:
 		bank := address / 0x1000
 		offset := address % 0x1000
-		this.CHR[this.chrOffsets[bank]+int(offset)] = value
+		Cartridge_CHR[this.chrOffsets[bank]+int(offset)] = value
 	case address >= 0x8000:
 		this.loadRegister(address, value)
 	case address >= 0x6000:
-		this.SRAM[int(address)-0x6000] = value
+		Cartridge_SRAM[int(address)-0x6000] = value
 	default:
 		log_Fatalf("unhandled mapper1 write at address: 0x%04X", address)
 	}
@@ -91,13 +89,13 @@ func Mapper1.writeControl(value: byte) {
 	mirror := value & 3
 	switch mirror {
 	case 0:
-		this.Cartridge.Mirror = MirrorSingle0
+		Cartridge_Mirror = MirrorSingle0
 	case 1:
-		this.Cartridge.Mirror = MirrorSingle1
+		Cartridge_Mirror = MirrorSingle1
 	case 2:
-		this.Cartridge.Mirror = MirrorVertical
+		Cartridge_Mirror = MirrorVertical
 	case 3:
-		this.Cartridge.Mirror = MirrorHorizontal
+		Cartridge_Mirror = MirrorHorizontal
 	}
 	this.updateOffsets()
 }
@@ -121,10 +119,10 @@ func Mapper1.prgBankOffset(index: int) => int {
 	if index >= 0x80 {
 		index -= 0x100
 	}
-	index %= len(this.PRG) / 0x4000
+	index %= len(Cartridge_PRG) / 0x4000
 	offset := index * 0x4000
 	if offset < 0 {
-		offset += len(this.PRG)
+		offset += len(Cartridge_PRG)
 	}
 	return offset
 }
@@ -133,10 +131,10 @@ func Mapper1.chrBankOffset(index: int) => int {
 	if index >= 0x80 {
 		index -= 0x100
 	}
-	index %= len(this.CHR) / 0x1000
+	index %= len(Cartridge_CHR) / 0x1000
 	offset := index * 0x1000
 	if offset < 0 {
-		offset += len(this.CHR)
+		offset += len(Cartridge_CHR)
 	}
 	return offset
 }

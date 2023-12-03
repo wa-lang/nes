@@ -4,27 +4,26 @@ type Mapper interface {
 	Step()
 }
 
-func NewMapper(console: *Console) => (Mapper, error) {
-	cartridge := console.Cartridge
-	switch cartridge.Mapper {
+func NewMapper() => (Mapper, error) {
+	switch Cartridge_Mapper {
 	case 0:
-		return NewMapper2(cartridge), nil
+		return NewMapper2(), nil
 	case 1:
-		return NewMapper1(cartridge), nil
+		return NewMapper1(), nil
 	case 2:
-		return NewMapper2(cartridge), nil
+		return NewMapper2(), nil
 	case 3:
-		return NewMapper3(cartridge), nil
+		return NewMapper3(), nil
 	case 4:
-		return NewMapper4(console, cartridge), nil
+		return NewMapper4(), nil
 	case 7:
-		return NewMapper7(cartridge), nil
+		return NewMapper7(), nil
 	case 40:
-		return NewMapper40(console, cartridge), nil
+		return NewMapper40(), nil
 	case 225:
-		return NewMapper225(cartridge), nil
+		return NewMapper225(), nil
 	}
-	err := errors_New("unsupported mapper: " + byte2str(cartridge.Mapper))
+	err := errors_New("unsupported mapper: " + byte2str(Cartridge_Mapper))
 	return nil, err
 }
 

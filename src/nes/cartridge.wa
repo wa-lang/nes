@@ -1,14 +1,16 @@
-type Cartridge struct {
-	PRG:     []byte
-	CHR:     []byte
-	SRAM:    []byte
-	Mapper:  byte
-	Mirror:  byte
-	Battery: byte
-}
+global Cartridge_PRG: []byte
+global Cartridge_CHR: []byte
+global Cartridge_SRAM: []byte
+global Cartridge_Mapper: byte
+global Cartridge_Mirror: byte
+global Cartridge_Battery: byte
 
-func NewCartridge(prg, chr: []byte, mapper, mirror, battery: byte) => *Cartridge {
-	sram := make([]byte, 0x2000)
-	return &Cartridge{prg, chr, sram, mapper, mirror, battery}
+func InitCartridge(prg, chr: []byte, mapper, mirror, battery: byte) {
+	Cartridge_PRG = prg
+	Cartridge_CHR = chr
+	Cartridge_SRAM = make([]byte, 0x2000)
+	Cartridge_Mapper = mapper
+	Cartridge_Mirror = mirror
+	Cartridge_Battery = battery
 }
 
