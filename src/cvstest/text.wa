@@ -1,0 +1,40 @@
+import "canvas"
+
+func TestText(ctx: canvas.Context2D) {
+	// FillText
+	// ctx.SetFont("30px Arial")
+	// ctx.FillText("Hello World", 10, 50)
+
+	// FillWithMaxWidth
+	ctx.SetFont("30px Arial")
+	ctx.FillTextWithMaxWidth("Hello World", 10, 50, 100)
+
+	// SetTextAlign
+	// ctx.SetFont("30px Arial")
+	// ctx.SetTextAlign("left")
+	// ctx.FillText("Hello World", 150, 50)
+
+	// SetTextBaseline
+	// ctx.SetFont("30px Arial")
+	// ctx.SetTextBaseline("bottom")
+	// ctx.FillText("Hello World", 10, 50)
+
+	// StrokeText
+	// ctx.SetFont("30px Arial")
+	// ctx.StrokeText("Hello World", 10, 50)
+
+	// StrokeWithMaxWidth
+	// ctx.SetFont("30px Arial")
+	// ctx.StrokeTextWithMaxWidth("Hello World", 10, 50, 100)
+
+	// MeasureText: TODO
+	// ctx.SetFont("30px Arial")
+	// textWidth := ctx.MeasureText("Hello World")
+	// ctx.FillText("width:"+textWidth, 10, 50)
+
+	// MeasureTextWithMaxWidth: TODO
+	// ctx.SetFont("30px Arial")
+	// textWidth := ctx.MeasureTextWithMaxWidth("Hello World", 100)
+	// ctx.FillText("width:"+textWidth.metrics.width, 10, 50)
+
+}

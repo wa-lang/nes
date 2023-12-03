@@ -1,0 +1,21 @@
+import "canvas"
+
+func TestPixelManipulation(ctx: canvas.Context2D) {
+	buf := make([]u8, 256*256*4)
+	for x := 0; x < 256; x++ {
+		for y := 0; y < 256; y++ {
+			buf[(y*256+x)*4+0] = u8(x)
+			buf[(y*256+x)*4+1] = u8(x)
+			buf[(y*256+x)*4+2] = u8(y)
+			buf[(y*256+x)*4+3] = 255
+		}
+	}
+
+	ctx.PutImageData(buf, 0, 0, 0, 0, 256, 256)
+
+	// width := ctx.GetImageDataWidth(buf)
+	// ctx.SetFont("30px Arial")
+	// ctx.FillText("width:"+string(width), 10, 50)
+	// height := ctx.GetImageDataHeight(buf)
+	// println("width=", width, "height=", height)
+}

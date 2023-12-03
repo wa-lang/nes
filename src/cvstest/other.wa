@@ -1,0 +1,16 @@
+import "canvas"
+
+func TestOther(ctx: canvas.Context2D) {
+	// save
+	// ctx.SetFillStyle("red")
+	// ctx.FillRect(20, 20, 75, 50)
+	// ctx.Save()
+
+	// Restore
+	ctx.SetFillStyle("red")
+	ctx.FillRect(20, 20, 75, 50)
+	ctx.Save()
+	ctx.SetFillStyle("blue")
+	ctx.FillRect(50, 50, 75, 50)
+	ctx.Restore()
+}

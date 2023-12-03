@@ -1,0 +1,38 @@
+import "canvas"
+
+func TestConversion(ctx: canvas.Context2D) {
+	// Scale
+	// ctx.StrokeRect(5, 5, 25, 15)
+	// ctx.Scale(2, 2)
+	// ctx.StrokeRect(5, 5, 25, 15)
+
+	// Rotate
+	// ctx.Rotate(20 * math.Pi / 180)
+	// ctx.FillRect(50, 20, 100, 50)
+
+	// Translate
+	// ctx.FillRect(10, 10, 100, 50)
+	// ctx.Translate(70, 70)
+	// ctx.FillRect(10, 10, 100, 50)
+
+	// Transform
+	// ctx.SetFillStyle("yellow")
+	// ctx.FillRect(0, 0, 250, 100)
+	// ctx.Transform(1, 0.5, -0.5, 1, 30, 10)
+	// ctx.SetFillStyle("red")
+	// ctx.FillRect(0, 0, 250, 100)
+	// ctx.Transform(1, 0.5, -0.5, 1, 30, 10)
+	// ctx.SetFillStyle("blue")
+	// ctx.FillRect(0, 0, 250, 100)
+
+	// SetTransform
+	ctx.SetFillStyle("yellow")
+	ctx.FillRect(0, 0, 250, 100)
+	ctx.SetTransform(1, 0.5, -0.5, 1, 30, 10)
+	ctx.SetFillStyle("red")
+	ctx.FillRect(0, 0, 250, 100)
+	ctx.SetTransform(1, 0.5, -0.5, 1, 30, 10)
+	ctx.SetFillStyle("blue")
+	ctx.FillRect(0, 0, 250, 100)
+
+}

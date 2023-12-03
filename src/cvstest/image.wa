@@ -1,0 +1,5 @@
+import "canvas"
+
+func TestImageDrawing(ctx: canvas.Context2D) {
+	// TODO
+}

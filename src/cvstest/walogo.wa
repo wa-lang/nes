@@ -1,0 +1,70 @@
+import "canvas"
+import "math"
+
+const (
+	transparent = "rgba(0,0,0,0)"
+	theme       = "#20B2AA"
+	white       = "#fff"
+)
+
+func drawEyes(ctx: canvas.Context2D, x, y, radius: f32, fillColor, strokeColor: string) {
+	ctx.SetFillStyle(fillColor)
+	ctx.BeginPath()
+	ctx.Arc(x, y, radius, 0, 2*math.Pi)
+	ctx.Fill()
+	ctx.SetStrokeStyle(strokeColor)
+	ctx.Stroke()
+}
+
+func drawMouth(ctx: canvas.Context2D) {
+	ctx.BeginPath()
+	ctx.MoveTo(50, 70)
+	ctx.BezierCurveTo(50, 58, 58, 50, 70, 50)
+	ctx.LineTo(130, 50)
+	ctx.BezierCurveTo(141, 50, 150, 58, 150, 70)
+	ctx.LineTo(150, 74)
+	ctx.LineTo(150, 130)
+	ctx.LineTo(150, 150)
+	ctx.LineTo(250, 150)
+	ctx.LineTo(250, 130)
+	ctx.LineTo(250, 74)
+	ctx.LineTo(250, 70)
+	ctx.BezierCurveTo(250, 58, 258, 50, 270, 50)
+	ctx.LineTo(330, 50)
+	ctx.BezierCurveTo(341, 50, 350, 58, 350, 70)
+	ctx.LineTo(350, 94)
+	ctx.LineTo(350, 130)
+	ctx.LineTo(350, 330)
+	ctx.BezierCurveTo(350, 341, 341, 350, 330, 350)
+	ctx.LineTo(70, 350)
+	ctx.BezierCurveTo(58, 350, 50, 341, 50, 330)
+	ctx.LineTo(50, 130)
+	ctx.LineTo(50, 94)
+	ctx.LineTo(50, 70)
+	ctx.ClosePath()
+	ctx.Fill()
+	ctx.Stroke()
+}
+
+func TestWa(ctx: canvas.Context2D) {
+	ctx.SetStrokeStyle(transparent)
+	ctx.SetMiterLimit(4)
+	ctx.SetFillStyle(transparent)
+	ctx.Scale(0.6, 0.6)
+	ctx.SetFillStyle(theme)
+	drawMouth(ctx)
+	drawEyes(ctx, 100, 105, 5, white, white)
+	drawEyes(ctx, 300, 105, 5, white, white)
+	ctx.SetFillStyle(transparent)
+	ctx.SetStrokeStyle(white)
+	ctx.SetLineWidth(8)
+	ctx.SetLineCap("round")
+	ctx.BeginPath()
+	ctx.MoveTo(268, 230)
+	ctx.LineTo(234, 264)
+	ctx.LineTo(200, 230)
+	ctx.LineTo(166, 264)
+	ctx.LineTo(132, 230)
+	ctx.Fill()
+	ctx.Stroke()
+}
