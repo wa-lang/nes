@@ -1,29 +1,132 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>myapp</title>
-</head>
-<body>
-  <div>
-    <h2>Canvas:<h2>
-    <canvas id="canvas" width="256" height="256"></canvas>
-  </div>
-  <div>
-    <h2>NES:<h2>
-    <canvas id="nes" width="256" height="240"></canvas>
-  </div>
+
+<title>myapp</title>
+
+<div>
+  <h2>凹语言版 - NES 模拟器</h2>
+  <canvas id="nes" width="256" height="240"></canvas>
+
+  <ul>
+    <li>回车: 启动/暂停</li>
+    <li>Shift: 选择切换</li>
+    <li>Z/X: 对应 A/B 键</li>
+    <li>方向键移动</li>
+  </ul>
+</div>
 
 <script type="text/javascript" src="./nes.js"></script>
 
 <script>
   let app = new WaApp();
-  app.init().then((result) => {
-    app.main();
-  })
+
+  let lastDownTarget, nesCanvas;
+  let lastKeyTimeStamp;
+
+  let btnA = false;
+  let btnB = false;
+  let btnSelect = false;
+  let btnStart = false;
+  let btnUp = false;
+  let btnDown = false;
+  let btnLeft = false;
+  let btnRight = false;
+
+  function clearAllKeys() {
+    btnA = false;
+    btnB = false;
+    btnSelect = false;
+    btnStart = false;
+    btnUp = false;
+    btnDown = false;
+    btnLeft = false;
+    btnRight = false;
+  }
+
+  window.onload = () => { 
+    nesCanvas = document.getElementById('nes'); 
+    document.addEventListener('mousedown', (event) => { 
+      lastDownTarget = event.target; 
+      console.log(`Mousedown Event: ${event}`);
+    }, false);
+
+    document.addEventListener('keydown', (event) => {
+      clearAllKeys();
+
+      //if(lastDownTarget != nesCanvas) {
+      //  return;
+      //}
+
+      switch(event.keyCode) {
+      case 13: // enter/space
+      case 32:
+        btnStart = true;
+        break;
+
+      case 16: // shift/A
+      case 65:
+        btnSelect = true;
+        break;
+
+      case 90: // Z
+        btnA = true;
+        break;
+      case 88: // X
+        btnB = true;
+        break;
+
+      case 37:
+        btnLeft = true;
+        break;
+      case 38:
+        btnUp = true;
+        break;
+      case 39:
+        btnRight = true;
+        break;
+      case 40:
+        btnDown = true;
+        break;
+      }
+    }, false);
+
+    document.addEventListener('keyup', (event) => {
+      clearAllKeys();
+    }, false);
+
+    app.init().then((result) => {
+      app.main();
+
+      app.NES_InitGame();
+
+      let preTimeStamp;
+      let stepAnima = function (timeStamp) {
+        // 转化为秒为单位
+        if(timeStamp > 0) {
+          timeStamp = timeStamp/1000;
+        } else {
+          timeStamp = 0;
+        }
+
+        // 记录当前时间
+        if (!preTimeStamp) {
+          preTimeStamp = timeStamp;
+        }
+
+        // 时间间隔
+        let dt = timeStamp - preTimeStamp;
+        // console.log(`nes: timeStamp = ${timeStamp}`);
+
+        // 执行
+        //console.log("key: btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight")
+        //console.log(`key: ${btnA}, ${btnB}, ${btnSelect}, ${btnStart}, ${btnUp}, ${btnDown}, ${btnLeft}, ${btnRight}`)
+        app.NES_SetButtons1(btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight);
+        app.NES_StepSeconds(dt);
+
+        preTimeStamp = timeStamp;
+        window.requestAnimationFrame(stepAnima);
+      }
+      window.requestAnimationFrame(stepAnima);
+    });
+  }
 </script>
-</body>
-</html>
-<!DOCTYPE html>
 
