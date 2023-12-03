@@ -69,7 +69,7 @@ func NES_SetButtons2(btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, b
 
 // 执行一定时间
 func NES_StepSeconds(dt: f64) {
-	//println("NES_StepSeconds dt=", dt)
+	println("NES_StepSeconds dt=", dt)
 
 	if dt > 1 {
 		dt = 0
@@ -82,5 +82,5 @@ func NES_StepSeconds(dt: f64) {
 	//println("NES_StepSeconds console.StepSeconds ok")
 	nes.Console_StepFrame()
 
-	nes_ctx.PutImageData(0, 0, 256, 240, nes.Console_Buffer().Pix)
+	nes_ctx.PutImageData(0, 0, 256, 240, raw(nes.Console_Buffer().Pix))
 }

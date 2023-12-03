@@ -17,7 +17,12 @@ func init() {
 		r := byte(c >> 16)
 		g := byte(c >> 8)
 		b := byte(c)
-		Palette[i] = color.RGBA{r, g, b, 0xFF}
+
+		rc := u32(r) | (u32(g) << 8) | (u32(b) << 16) | 0xFF000000
+
+		//Palette[i] = color.RGBA{r, g, b, 0xFF}
+
+		Palette[i] = color.RGBA(rc)
 	}
 }
 
