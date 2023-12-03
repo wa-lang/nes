@@ -1,8 +1,6 @@
 package nes
 
 type Mapper4 struct {
-	*Cartridge
-	console    *Console
 	register   byte
 	registers  [8]byte
 	prgMode    byte
@@ -14,8 +12,8 @@ type Mapper4 struct {
 	irqEnable  bool
 }
 
-func NewMapper4(console *Console, cartridge *Cartridge) Mapper {
-	this := &Mapper4{Cartridge: cartridge, console: console}
+func NewMapper4() Mapper {
+	this := &Mapper4{}
 	this.prgOffsets[0] = this.prgBankOffset(0)
 	this.prgOffsets[1] = this.prgBankOffset(1)
 	this.prgOffsets[2] = this.prgBankOffset(-2)
@@ -24,14 +22,13 @@ func NewMapper4(console *Console, cartridge *Cartridge) Mapper {
 }
 
 func (this *Mapper4) Step() {
-	ppu := this.console.PPU
-	if ppu.Cycle != 280 { // TODO: this *should* be 260
+	if PPU_Cycle != 280 { // TODO: this *should* be 260
 		return
 	}
-	if ppu.ScanLine > 239 && ppu.ScanLine < 261 {
+	if PPU_ScanLine > 239 && PPU_ScanLine < 261 {
 		return
 	}
-	if ppu.flagShowBackground == 0 && ppu.flagShowSprites == 0 {
+	if PPU_flagShowBackground == 0 && PPU_flagShowSprites == 0 {
 		return
 	}
 	this.HandleScanLine()
@@ -43,7 +40,7 @@ func (this *Mapper4) HandleScanLine() {
 	} else {
 		this.counter--
 		if this.counter == 0 && this.irqEnable {
-			this.console.CPU.triggerIRQ()
+			CPU_triggerIRQ()
 		}
 	}
 }
@@ -53,14 +50,14 @@ func (this *Mapper4) Read(address uint16) byte {
 	case address < 0x2000:
 		bank := address / 0x0400
 		offset := address % 0x0400
-		return this.CHR[this.chrOffsets[bank]+int(offset)]
+		return Cartridge_CHR[this.chrOffsets[bank]+int(offset)]
 	case address >= 0x8000:
 		address = address - 0x8000
 		bank := address / 0x2000
 		offset := address % 0x2000
-		return this.PRG[this.prgOffsets[bank]+int(offset)]
+		return Cartridge_PRG[this.prgOffsets[bank]+int(offset)]
 	case address >= 0x6000:
-		return this.SRAM[int(address)-0x6000]
+		return Cartridge_SRAM[int(address)-0x6000]
 	default:
 		log_Fatalf("unhandled mapper4 read at address: 0x%04X", address)
 	}
@@ -72,11 +69,11 @@ func (this *Mapper4) Write(address uint16, value byte) {
 	case address < 0x2000:
 		bank := address / 0x0400
 		offset := address % 0x0400
-		this.CHR[this.chrOffsets[bank]+int(offset)] = value
+		Cartridge_CHR[this.chrOffsets[bank]+int(offset)] = value
 	case address >= 0x8000:
 		this.writeRegister(address, value)
 	case address >= 0x6000:
-		this.SRAM[int(address)-0x6000] = value
+		Cartridge_SRAM[int(address)-0x6000] = value
 	default:
 		log_Fatalf("unhandled mapper4 write at address: 0x%04X", address)
 	}
@@ -118,9 +115,9 @@ func (this *Mapper4) writeBankData(value byte) {
 func (this *Mapper4) writeMirror(value byte) {
 	switch value & 1 {
 	case 0:
-		this.Cartridge.Mirror = MirrorVertical
+		Cartridge_Mirror = MirrorVertical
 	case 1:
-		this.Cartridge.Mirror = MirrorHorizontal
+		Cartridge_Mirror = MirrorHorizontal
 	}
 }
 
@@ -147,10 +144,10 @@ func (this *Mapper4) prgBankOffset(index int) int {
 	if index >= 0x80 {
 		index -= 0x100
 	}
-	index %= len(this.PRG) / 0x2000
+	index %= len(Cartridge_PRG) / 0x2000
 	offset := index * 0x2000
 	if offset < 0 {
-		offset += len(this.PRG)
+		offset += len(Cartridge_PRG)
 	}
 	return offset
 }
@@ -159,10 +156,10 @@ func (this *Mapper4) chrBankOffset(index int) int {
 	if index >= 0x80 {
 		index -= 0x100
 	}
-	index %= len(this.CHR) / 0x0400
+	index %= len(Cartridge_CHR) / 0x0400
 	offset := index * 0x0400
 	if offset < 0 {
-		offset += len(this.CHR)
+		offset += len(Cartridge_CHR)
 	}
 	return offset
 }

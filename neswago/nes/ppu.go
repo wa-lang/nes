@@ -4,321 +4,314 @@ import (
 	"image"
 )
 
-type PPU struct {
-	*PPUMemory          // memory
-	console    *Console // reference to parent object
+var PPU_Cycle int    // 0-340
+var PPU_ScanLine int // 0-261, 0-239=visible, 240=post, 241-260=vblank, 261=pre
+var PPU_Frame uint64 // frame counter
+var PPU_paletteData [32]byte
 
-	Cycle    int    // 0-340
-	ScanLine int    // 0-261, 0-239=visible, 240=post, 241-260=vblank, 261=pre
-	Frame    uint64 // frame counter
+// storage variables
+var PPU_nameTableData [2048]byte
+var PPU_oamData [256]byte
+var PPU_front *image.RGBA
+var PPU_back *image.RGBA
 
-	// storage variables
-	paletteData   [32]byte
-	nameTableData [2048]byte
-	oamData       [256]byte
-	front         *image.RGBA
-	back          *image.RGBA
+// PPU registers
+var PPU_v uint16 // current vram address (15 bit)
+var PPU_t uint16 // temporary vram address (15 bit)
+var PPU_x byte   // fine x scroll (3 bit)
+var PPU_w byte   // write toggle (1 bit)
+var PPU_f byte   // even/odd frame flag (1 bit)
 
-	// PPU registers
-	v uint16 // current vram address (15 bit)
-	t uint16 // temporary vram address (15 bit)
-	x byte   // fine x scroll (3 bit)
-	w byte   // write toggle (1 bit)
-	f byte   // even/odd frame flag (1 bit)
+var PPU_register byte
 
-	register byte
+// NMI flags
+var PPU_nmiOccurred bool
+var PPU_nmiOutput bool
+var PPU_nmiPrevious bool
+var PPU_nmiDelay byte
 
-	// NMI flags
-	nmiOccurred bool
-	nmiOutput   bool
-	nmiPrevious bool
-	nmiDelay    byte
+// background temporary variables
+var PPU_nameTableByte byte
+var PPU_attributeTableByte byte
+var PPU_lowTileByte byte
+var PPU_highTileByte byte
+var PPU_tileData uint64
 
-	// background temporary variables
-	nameTableByte      byte
-	attributeTableByte byte
-	lowTileByte        byte
-	highTileByte       byte
-	tileData           uint64
+// sprite temporary variables
+var PPU_spriteCount int
+var PPU_spritePatterns [8]uint32
+var PPU_spritePositions [8]byte
+var PPU_spritePriorities [8]byte
+var PPU_spriteIndexes [8]byte
 
-	// sprite temporary variables
-	spriteCount      int
-	spritePatterns   [8]uint32
-	spritePositions  [8]byte
-	spritePriorities [8]byte
-	spriteIndexes    [8]byte
+// $2000 PPUCTRL
+var PPU_flagNameTable byte       // 0: $2000; 1: $2400; 2: $2800; 3: $2C00
+var PPU_flagIncrement byte       // 0: add 1; 1: add 32
+var PPU_flagSpriteTable byte     // 0: $0000; 1: $1000; ignored in 8x16 mode
+var PPU_flagBackgroundTable byte // 0: $0000; 1: $1000
+var PPU_flagSpriteSize byte      // 0: 8x8; 1: 8x16
+var PPU_flagMasterSlave byte     // 0: read EXT; 1: write EXT
 
-	// $2000 PPUCTRL
-	flagNameTable       byte // 0: $2000; 1: $2400; 2: $2800; 3: $2C00
-	flagIncrement       byte // 0: add 1; 1: add 32
-	flagSpriteTable     byte // 0: $0000; 1: $1000; ignored in 8x16 mode
-	flagBackgroundTable byte // 0: $0000; 1: $1000
-	flagSpriteSize      byte // 0: 8x8; 1: 8x16
-	flagMasterSlave     byte // 0: read EXT; 1: write EXT
+// $2001 PPUMASK
+var PPU_flagGrayscale byte          // 0: color; 1: grayscale
+var PPU_flagShowLeftBackground byte // 0: hide; 1: show
+var PPU_flagShowLeftSprites byte    // 0: hide; 1: show
+var PPU_flagShowBackground byte     // 0: hide; 1: show
+var PPU_flagShowSprites byte        // 0: hide; 1: show
+var PPU_flagRedTint byte            // 0: normal; 1: emphasized
+var PPU_flagGreenTint byte          // 0: normal; 1: emphasized
+var PPU_flagBlueTint byte           // 0: normal; 1: emphasized
 
-	// $2001 PPUMASK
-	flagGrayscale          byte // 0: color; 1: grayscale
-	flagShowLeftBackground byte // 0: hide; 1: show
-	flagShowLeftSprites    byte // 0: hide; 1: show
-	flagShowBackground     byte // 0: hide; 1: show
-	flagShowSprites        byte // 0: hide; 1: show
-	flagRedTint            byte // 0: normal; 1: emphasized
-	flagGreenTint          byte // 0: normal; 1: emphasized
-	flagBlueTint           byte // 0: normal; 1: emphasized
+// $2002 PPUSTATUS
+var PPU_flagSpriteZeroHit byte
+var PPU_flagSpriteOverflow byte
 
-	// $2002 PPUSTATUS
-	flagSpriteZeroHit  byte
-	flagSpriteOverflow byte
+// $2003 OAMADDR
+var PPU_oamAddress byte
 
-	// $2003 OAMADDR
-	oamAddress byte
+// $2007 PPUDATA
+var PPU_bufferedData byte // for buffered reads
 
-	// $2007 PPUDATA
-	bufferedData byte // for buffered reads
+//var file_log *os.File
+
+func PPU_initNesPPU() {
+	PPU_front = image.NewRGBA(image.Rect(0, 0, 256, 240))
+	PPU_back = image.NewRGBA(image.Rect(0, 0, 256, 240))
+	PPU_Reset()
 }
 
-func NewPPU(console *Console) *PPU {
-	this := &PPU{PPUMemory: NewPPUMemory(console), console: console}
-	this.front = image.NewRGBA(image.Rect(0, 0, 256, 240))
-	this.back = image.NewRGBA(image.Rect(0, 0, 256, 240))
-	this.Reset()
-	return this
+func PPU_Reset() {
+	PPU_Cycle = 340
+	PPU_ScanLine = 240
+	PPU_Frame = 0
+	PPU_writeControl(0)
+	PPU_writeMask(0)
+	PPU_writeOAMAddress(0)
 }
 
-func (this *PPU) Reset() {
-	this.Cycle = 340
-	this.ScanLine = 240
-	this.Frame = 0
-	this.writeControl(0)
-	this.writeMask(0)
-	this.writeOAMAddress(0)
-}
-
-func (this *PPU) readPalette(address uint16) byte {
+func PPU_readPalette(address uint16) byte {
 	if address >= 16 && address%4 == 0 {
 		address -= 16
 	}
-	return this.paletteData[address]
+	return PPU_paletteData[address]
 }
 
-func (this *PPU) writePalette(address uint16, value byte) {
+func PPU_writePalette(address uint16, value byte) {
 	if address >= 16 && address%4 == 0 {
 		address -= 16
 	}
-	this.paletteData[address] = value
+	PPU_paletteData[address] = value
 }
 
-func (this *PPU) readRegister(address uint16) byte {
+func PPU_readRegister(address uint16) byte {
 	switch address {
 	case 0x2002:
-		return this.readStatus()
+		return PPU_readStatus()
 	case 0x2004:
-		return this.readOAMData()
+		return PPU_readOAMData()
 	case 0x2007:
-		return this.readData()
+		return PPU_readData()
 	}
 	return 0
 }
 
-func (this *PPU) writeRegister(address uint16, value byte) {
-	this.register = value
+func PPU_writeRegister(address uint16, value byte) {
+	PPU_register = value
 	switch address {
 	case 0x2000:
-		this.writeControl(value)
+		PPU_writeControl(value)
 	case 0x2001:
-		this.writeMask(value)
+		PPU_writeMask(value)
 	case 0x2003:
-		this.writeOAMAddress(value)
+		PPU_writeOAMAddress(value)
 	case 0x2004:
-		this.writeOAMData(value)
+		PPU_writeOAMData(value)
 	case 0x2005:
-		this.writeScroll(value)
+		PPU_writeScroll(value)
 	case 0x2006:
-		this.writeAddress(value)
+		PPU_writeAddress(value)
 	case 0x2007:
-		this.writeData(value)
+		PPU_writeData(value)
 	case 0x4014:
-		this.writeDMA(value)
+		PPU_writeDMA(value)
 	}
 }
 
 // $2000: PPUCTRL
-func (this *PPU) writeControl(value byte) {
-	if Halt {
-		println("PPU.writeControl(), value:", value)
-	}
-	this.flagNameTable = (value >> 0) & 3
-	this.flagIncrement = (value >> 2) & 1
-	this.flagSpriteTable = (value >> 3) & 1
-	this.flagBackgroundTable = (value >> 4) & 1
-	this.flagSpriteSize = (value >> 5) & 1
-	this.flagMasterSlave = (value >> 6) & 1
-	this.nmiOutput = (value>>7)&1 == 1
-	this.nmiChange()
+func PPU_writeControl(value byte) {
+	PPU_flagNameTable = (value >> 0) & 3
+	PPU_flagIncrement = (value >> 2) & 1
+	PPU_flagSpriteTable = (value >> 3) & 1
+	PPU_flagBackgroundTable = (value >> 4) & 1
+	PPU_flagSpriteSize = (value >> 5) & 1
+	PPU_flagMasterSlave = (value >> 6) & 1
+
+	PPU_nmiOutput = (value>>7)&1 == 1
+
+	PPU_nmiChange()
 	// t: ....BA.. ........ = d: ......BA
-	this.t = (this.t & 0xF3FF) | ((uint16(value) & 0x03) << 10)
+	PPU_t = (PPU_t & 0xF3FF) | ((uint16(value) & 0x03) << 10)
 }
 
 // $2001: PPUMASK
-func (this *PPU) writeMask(value byte) {
-	this.flagGrayscale = (value >> 0) & 1
-	this.flagShowLeftBackground = (value >> 1) & 1
-	this.flagShowLeftSprites = (value >> 2) & 1
-	this.flagShowBackground = (value >> 3) & 1
-	this.flagShowSprites = (value >> 4) & 1
-	this.flagRedTint = (value >> 5) & 1
-	this.flagGreenTint = (value >> 6) & 1
-	this.flagBlueTint = (value >> 7) & 1
+func PPU_writeMask(value byte) {
+	PPU_flagGrayscale = (value >> 0) & 1
+	PPU_flagShowLeftBackground = (value >> 1) & 1
+	PPU_flagShowLeftSprites = (value >> 2) & 1
+	PPU_flagShowBackground = (value >> 3) & 1
+	PPU_flagShowSprites = (value >> 4) & 1
+	PPU_flagRedTint = (value >> 5) & 1
+	PPU_flagGreenTint = (value >> 6) & 1
+	PPU_flagBlueTint = (value >> 7) & 1
 }
 
 // $2002: PPUSTATUS
-func (this *PPU) readStatus() byte {
-	result := this.register & 0x1F
-	result |= this.flagSpriteOverflow << 5
-	result |= this.flagSpriteZeroHit << 6
-	if this.nmiOccurred {
+func PPU_readStatus() byte {
+	result := PPU_register & 0x1F
+	result |= PPU_flagSpriteOverflow << 5
+	result |= PPU_flagSpriteZeroHit << 6
+	if PPU_nmiOccurred {
 		result |= 1 << 7
 	}
-	this.nmiOccurred = false
-	this.nmiChange()
+	PPU_nmiOccurred = false
+	PPU_nmiChange()
 	// w:                   = 0
-	this.w = 0
+	PPU_w = 0
 	return result
 }
 
 // $2003: OAMADDR
-func (this *PPU) writeOAMAddress(value byte) {
-	this.oamAddress = value
+func PPU_writeOAMAddress(value byte) {
+	PPU_oamAddress = value
 }
 
 // $2004: OAMDATA (read)
-func (this *PPU) readOAMData() byte {
-	data := this.oamData[this.oamAddress]
-	if (this.oamAddress & 0x03) == 0x02 {
+func PPU_readOAMData() byte {
+	data := PPU_oamData[PPU_oamAddress]
+	if (PPU_oamAddress & 0x03) == 0x02 {
 		data = data & 0xE3
 	}
 	return data
 }
 
 // $2004: OAMDATA (write)
-func (this *PPU) writeOAMData(value byte) {
-	this.oamData[this.oamAddress] = value
-	this.oamAddress++
+func PPU_writeOAMData(value byte) {
+	PPU_oamData[PPU_oamAddress] = value
+	PPU_oamAddress++
 }
 
 // $2005: PPUSCROLL
-func (this *PPU) writeScroll(value byte) {
-	if this.w == 0 {
+func PPU_writeScroll(value byte) {
+	if PPU_w == 0 {
 		// t: ........ ...HGFED = d: HGFED...
 		// x:               CBA = d: .....CBA
 		// w:                   = 1
-		this.t = (this.t & 0xFFE0) | (uint16(value) >> 3)
-		this.x = value & 0x07
-		this.w = 1
+		PPU_t = (PPU_t & 0xFFE0) | (uint16(value) >> 3)
+		PPU_x = value & 0x07
+		PPU_w = 1
 	} else {
 		// t: .CBA..HG FED..... = d: HGFEDCBA
 		// w:                   = 0
-		this.t = (this.t & 0x8FFF) | ((uint16(value) & 0x07) << 12)
-		this.t = (this.t & 0xFC1F) | ((uint16(value) & 0xF8) << 2)
-		this.w = 0
+		PPU_t = (PPU_t & 0x8FFF) | ((uint16(value) & 0x07) << 12)
+		PPU_t = (PPU_t & 0xFC1F) | ((uint16(value) & 0xF8) << 2)
+		PPU_w = 0
 	}
 }
 
 // $2006: PPUADDR
-func (this *PPU) writeAddress(value byte) {
-	if this.w == 0 {
+func PPU_writeAddress(value byte) {
+	if PPU_w == 0 {
 		// t: ..FEDCBA ........ = d: ..FEDCBA
 		// t: .X...... ........ = 0
 		// w:                   = 1
-		this.t = (this.t & 0x80FF) | ((uint16(value) & 0x3F) << 8)
-		this.w = 1
+		PPU_t = (PPU_t & 0x80FF) | ((uint16(value) & 0x3F) << 8)
+		PPU_w = 1
 	} else {
 		// t: ........ HGFEDCBA = d: HGFEDCBA
 		// v                    = t
 		// w:                   = 0
-		this.t = (this.t & 0xFF00) | uint16(value)
-		this.v = this.t
-		this.w = 0
+		PPU_t = (PPU_t & 0xFF00) | uint16(value)
+		PPU_v = PPU_t
+		PPU_w = 0
 	}
 }
 
 // $2007: PPUDATA (read)
-func (this *PPU) readData() byte {
-	value := this.Read(this.v)
+func PPU_readData() byte {
+	value := PPUMemory_Read(PPU_v)
 	// emulate buffered reads
-	if this.v%0x4000 < 0x3F00 {
-		buffered := this.bufferedData
-		this.bufferedData = value
+	if PPU_v%0x4000 < 0x3F00 {
+		buffered := PPU_bufferedData
+		PPU_bufferedData = value
 		value = buffered
 	} else {
-		this.bufferedData = this.Read(this.v - 0x1000)
+		PPU_bufferedData = PPUMemory_Read(PPU_v - 0x1000)
 	}
 	// increment address
-	if this.flagIncrement == 0 {
-		this.v += 1
+	if PPU_flagIncrement == 0 {
+		PPU_v += 1
 	} else {
-		this.v += 32
+		PPU_v += 32
 	}
 	return value
 }
 
 // $2007: PPUDATA (write)
-func (this *PPU) writeData(value byte) {
-	this.Write(this.v, value)
-	if this.flagIncrement == 0 {
-		this.v += 1
+func PPU_writeData(value byte) {
+	PPUMemory_Write(PPU_v, value)
+	if PPU_flagIncrement == 0 {
+		PPU_v += 1
 	} else {
-		this.v += 32
+		PPU_v += 32
 	}
 }
 
 // $4014: OAMDMA
-func (this *PPU) writeDMA(value byte) {
-	cpu := this.console.CPU
+func PPU_writeDMA(value byte) {
 	address := uint16(value) << 8
 	for i := 0; i < 256; i++ {
-		this.oamData[this.oamAddress] = cpu.Read(address)
-		this.oamAddress++
+		PPU_oamData[PPU_oamAddress] = CPUMemory_Read(address)
+		PPU_oamAddress++
 		address++
 	}
-	cpu.stall += 513
-	if cpu.Cycles%2 == 1 {
-		cpu.stall++
+	CPU_stall += 513
+	if CPU_Cycles%2 == 1 {
+		CPU_stall++
 	}
 }
 
 // NTSC Timing Helper Functions
 
-func (this *PPU) incrementX() {
+func PPU_incrementX() {
 	// increment hori(v)
 	// if coarse X == 31
-	if this.v&0x001F == 31 {
+	if PPU_v&0x001F == 31 {
 		// coarse X = 0
-		this.v &= 0xFFE0
+		PPU_v &= 0xFFE0
 		// switch horizontal nametable
-		this.v ^= 0x0400
+		PPU_v ^= 0x0400
 	} else {
 		// increment coarse X
-		this.v++
+		PPU_v++
 	}
 }
 
-func (this *PPU) incrementY() {
+func PPU_incrementY() {
 	// increment vert(v)
 	// if fine Y < 7
-	if this.v&0x7000 != 0x7000 {
+	if PPU_v&0x7000 != 0x7000 {
 		// increment fine Y
-		this.v += 0x1000
+		PPU_v += 0x1000
 	} else {
 		// fine Y = 0
-		this.v &= 0x8FFF
+		PPU_v &= 0x8FFF
 		// let y = coarse Y
-		y := (this.v & 0x03E0) >> 5
+		y := (PPU_v & 0x03E0) >> 5
 		if y == 29 {
 			// coarse Y = 0
 			y = 0
 			// switch vertical nametable
-			this.v ^= 0x0800
+			PPU_v ^= 0x0800
 		} else if y == 31 {
 			// coarse Y = 0, nametable not switched
 			y = 0
@@ -327,109 +320,109 @@ func (this *PPU) incrementY() {
 			y++
 		}
 		// put coarse Y back into v
-		this.v = (this.v & 0xFC1F) | (y << 5)
+		PPU_v = (PPU_v & 0xFC1F) | (y << 5)
 	}
 }
 
-func (this *PPU) copyX() {
+func PPU_copyX() {
 	// hori(v) = hori(t)
 	// v: .....F.. ...EDCBA = t: .....F.. ...EDCBA
-	this.v = (this.v & 0xFBE0) | (this.t & 0x041F)
+	PPU_v = (PPU_v & 0xFBE0) | (PPU_t & 0x041F)
 }
 
-func (this *PPU) copyY() {
+func PPU_copyY() {
 	// vert(v) = vert(t)
 	// v: .IHGF.ED CBA..... = t: .IHGF.ED CBA.....
-	this.v = (this.v & 0x841F) | (this.t & 0x7BE0)
+	PPU_v = (PPU_v & 0x841F) | (PPU_t & 0x7BE0)
 }
 
-func (this *PPU) nmiChange() {
-	nmi := this.nmiOutput && this.nmiOccurred
-	if nmi && !this.nmiPrevious {
+func PPU_nmiChange() {
+	nmi := PPU_nmiOutput && PPU_nmiOccurred
+	if nmi && !PPU_nmiPrevious {
 		// TODO: this fixes some games but the delay shouldn't have to be so
 		// long, so the timings are off somewhere
-		this.nmiDelay = 15
+		PPU_nmiDelay = 15
 	}
-	this.nmiPrevious = nmi
+	PPU_nmiPrevious = nmi
 }
 
-func (this *PPU) setVerticalBlank() {
-	this.front, this.back = this.back, this.front
-	this.nmiOccurred = true
-	this.nmiChange()
+func PPU_setVerticalBlank() {
+	PPU_front, PPU_back = PPU_back, PPU_front
+	PPU_nmiOccurred = true
+	PPU_nmiChange()
 }
 
-func (this *PPU) clearVerticalBlank() {
-	this.nmiOccurred = false
-	this.nmiChange()
+func PPU_clearVerticalBlank() {
+	PPU_nmiOccurred = false
+	PPU_nmiChange()
 }
 
-func (this *PPU) fetchNameTableByte() {
-	v := this.v
+func PPU_fetchNameTableByte() {
+	v := PPU_v
 	address := 0x2000 | (v & 0x0FFF)
-	this.nameTableByte = this.Read(address)
+	PPU_nameTableByte = PPUMemory_Read(address)
 }
 
-func (this *PPU) fetchAttributeTableByte() {
-	v := this.v
+func PPU_fetchAttributeTableByte() {
+	v := PPU_v
 	address := 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07)
 	shift := ((v >> 4) & 4) | (v & 2)
-	this.attributeTableByte = ((this.Read(address) >> shift) & 3) << 2
+	PPU_attributeTableByte = ((PPUMemory_Read(address) >> shift) & 3) << 2
 }
 
-func (this *PPU) fetchLowTileByte() {
-	fineY := (this.v >> 12) & 7
-	table := this.flagBackgroundTable
-	tile := this.nameTableByte
+func PPU_fetchLowTileByte() {
+	fineY := (PPU_v >> 12) & 7
+	table := PPU_flagBackgroundTable
+	tile := PPU_nameTableByte
 	address := 0x1000*uint16(table) + uint16(tile)*16 + fineY
-	this.lowTileByte = this.Read(address)
+	PPU_lowTileByte = PPUMemory_Read(address)
 }
 
-func (this *PPU) fetchHighTileByte() {
-	fineY := (this.v >> 12) & 7
-	table := this.flagBackgroundTable
-	tile := this.nameTableByte
+func PPU_fetchHighTileByte() {
+	fineY := (PPU_v >> 12) & 7
+	table := PPU_flagBackgroundTable
+	tile := PPU_nameTableByte
 	address := 0x1000*uint16(table) + uint16(tile)*16 + fineY
-	this.highTileByte = this.Read(address + 8)
+	PPU_highTileByte = PPUMemory_Read(address + 8)
 }
 
-func (this *PPU) storeTileData() {
+func PPU_storeTileData() {
 	var data uint32
 	for i := 0; i < 8; i++ {
-		a := this.attributeTableByte
-		p1 := (this.lowTileByte & 0x80) >> 7
-		p2 := (this.highTileByte & 0x80) >> 6
-		this.lowTileByte <<= 1
-		this.highTileByte <<= 1
+		a := PPU_attributeTableByte
+		p1 := (PPU_lowTileByte & 0x80) >> 7
+		p2 := (PPU_highTileByte & 0x80) >> 6
+		PPU_lowTileByte <<= 1
+		PPU_highTileByte <<= 1
 		data <<= 4
 		data |= uint32(a | p1 | p2)
 	}
-	this.tileData |= uint64(data)
+	PPU_tileData |= uint64(data)
 }
 
-func (this *PPU) fetchTileData() uint32 {
-	return uint32(this.tileData >> 32)
+func PPU_fetchTileData() uint32 {
+	return uint32(PPU_tileData >> 32)
 }
 
-func (this *PPU) backgroundPixel() byte {
-	if this.flagShowBackground == 0 {
+func PPU_backgroundPixel() byte {
+	if PPU_flagShowBackground == 0 {
 		return 0
 	}
-	data := this.fetchTileData() >> ((7 - this.x) * 4)
+	data := PPU_fetchTileData() >> ((7 - PPU_x) * 4)
 	return byte(data & 0x0F)
 }
 
-func (this *PPU) spritePixel() (byte, byte) {
-	if this.flagShowSprites == 0 {
+func PPU_spritePixel() (byte, byte) {
+	if PPU_flagShowSprites == 0 {
 		return 0, 0
 	}
-	for i := 0; i < this.spriteCount; i++ {
-		offset := (this.Cycle - 1) - int(this.spritePositions[i])
+	for i := 0; i < PPU_spriteCount; i++ {
+		offset := (PPU_Cycle - 1) - int(PPU_spritePositions[i])
 		if offset < 0 || offset > 7 {
 			continue
 		}
 		offset = 7 - offset
-		color := byte((this.spritePatterns[i] >> byte(offset*4)) & 0x0F)
+		color := byte((PPU_spritePatterns[i] >> byte(offset*4)) & 0x0F)
 		if color%4 == 0 {
 			continue
 		}
@@ -438,15 +431,15 @@ func (this *PPU) spritePixel() (byte, byte) {
 	return 0, 0
 }
 
-func (this *PPU) renderPixel() {
-	x := this.Cycle - 1
-	y := this.ScanLine
-	background := this.backgroundPixel()
-	i, sprite := this.spritePixel()
-	if x < 8 && this.flagShowLeftBackground == 0 {
+func PPU_renderPixel() {
+	x := PPU_Cycle - 1
+	y := PPU_ScanLine
+	background := PPU_backgroundPixel()
+	i, sprite := PPU_spritePixel()
+	if x < 8 && PPU_flagShowLeftBackground == 0 {
 		background = 0
 	}
-	if x < 8 && this.flagShowLeftSprites == 0 {
+	if x < 8 && PPU_flagShowLeftSprites == 0 {
 		sprite = 0
 	}
 	b := background%4 != 0
@@ -459,28 +452,28 @@ func (this *PPU) renderPixel() {
 	} else if b && !s {
 		color = background
 	} else {
-		if this.spriteIndexes[i] == 0 && x < 255 {
-			this.flagSpriteZeroHit = 1
+		if PPU_spriteIndexes[i] == 0 && x < 255 {
+			PPU_flagSpriteZeroHit = 1
 		}
-		if this.spritePriorities[i] == 0 {
+		if PPU_spritePriorities[i] == 0 {
 			color = sprite | 0x10
 		} else {
 			color = background
 		}
 	}
-	c := Palette[this.readPalette(uint16(color))%64]
-	this.back.SetRGBA(x, y, c)
+	c := Palette[PPU_readPalette(uint16(color))%64]
+	PPU_back.SetRGBA(x, y, c)
 }
 
-func (this *PPU) fetchSpritePattern(i, row int) uint32 {
-	tile := this.oamData[i*4+1]
-	attributes := this.oamData[i*4+2]
+func PPU_fetchSpritePattern(i, row int) uint32 {
+	tile := PPU_oamData[i*4+1]
+	attributes := PPU_oamData[i*4+2]
 	var address uint16
-	if this.flagSpriteSize == 0 {
+	if PPU_flagSpriteSize == 0 {
 		if attributes&0x80 == 0x80 {
 			row = 7 - row
 		}
-		table := this.flagSpriteTable
+		table := PPU_flagSpriteTable
 		address = 0x1000*uint16(table) + uint16(tile)*16 + uint16(row)
 	} else {
 		if attributes&0x80 == 0x80 {
@@ -495,8 +488,8 @@ func (this *PPU) fetchSpritePattern(i, row int) uint32 {
 		address = 0x1000*uint16(table) + uint16(tile)*16 + uint16(row)
 	}
 	a := (attributes & 3) << 2
-	lowTileByte := this.Read(address)
-	highTileByte := this.Read(address + 8)
+	lowTileByte := PPUMemory_Read(address)
+	highTileByte := PPUMemory_Read(address + 8)
 	var data uint32
 	for i := 0; i < 8; i++ {
 		var p1, p2 byte
@@ -517,138 +510,134 @@ func (this *PPU) fetchSpritePattern(i, row int) uint32 {
 	return data
 }
 
-func (this *PPU) evaluateSprites() {
+func PPU_evaluateSprites() {
 	var h int
-	if this.flagSpriteSize == 0 {
+	if PPU_flagSpriteSize == 0 {
 		h = 8
 	} else {
 		h = 16
 	}
 	count := 0
 	for i := 0; i < 64; i++ {
-		y := this.oamData[i*4+0]
-		a := this.oamData[i*4+2]
-		x := this.oamData[i*4+3]
-		row := this.ScanLine - int(y)
+		y := PPU_oamData[i*4+0]
+		a := PPU_oamData[i*4+2]
+		x := PPU_oamData[i*4+3]
+		row := PPU_ScanLine - int(y)
 		if row < 0 || row >= h {
 			continue
 		}
 		if count < 8 {
-			this.spritePatterns[count] = this.fetchSpritePattern(i, row)
-			this.spritePositions[count] = x
-			this.spritePriorities[count] = (a >> 5) & 1
-			this.spriteIndexes[count] = byte(i)
+			PPU_spritePatterns[count] = PPU_fetchSpritePattern(i, row)
+			PPU_spritePositions[count] = x
+			PPU_spritePriorities[count] = (a >> 5) & 1
+			PPU_spriteIndexes[count] = byte(i)
 		}
 		count++
 	}
 	if count > 8 {
 		count = 8
-		this.flagSpriteOverflow = 1
+		PPU_flagSpriteOverflow = 1
 	}
-	this.spriteCount = count
+	PPU_spriteCount = count
 }
 
 // tick updates Cycle, ScanLine and Frame counters
-func (this *PPU) tick() {
-	if Halt {
-		println(this.nmiDelay, this.nmiOutput, this.nmiOccurred)
-		Halt = false
-	}
-	if this.nmiDelay > 0 {
-		this.nmiDelay--
-		if this.nmiDelay == 0 && this.nmiOutput && this.nmiOccurred {
-			this.console.CPU.triggerNMI()
+func PPU_tick() {
+	if PPU_nmiDelay > 0 {
+		PPU_nmiDelay--
+		if PPU_nmiDelay == 0 && PPU_nmiOutput && PPU_nmiOccurred {
+			CPU_triggerNMI()
 		}
 	}
 
-	if this.flagShowBackground != 0 || this.flagShowSprites != 0 {
-		if this.f == 1 && this.ScanLine == 261 && this.Cycle == 339 {
-			this.Cycle = 0
-			this.ScanLine = 0
-			this.Frame++
-			this.f ^= 1
+	if PPU_flagShowBackground != 0 || PPU_flagShowSprites != 0 {
+		if PPU_f == 1 && PPU_ScanLine == 261 && PPU_Cycle == 339 {
+			PPU_Cycle = 0
+			PPU_ScanLine = 0
+			PPU_Frame++
+			PPU_f ^= 1
 			return
 		}
 	}
-	this.Cycle++
-	if this.Cycle > 340 {
-		this.Cycle = 0
-		this.ScanLine++
-		if this.ScanLine > 261 {
-			this.ScanLine = 0
-			this.Frame++
-			this.f ^= 1
+	PPU_Cycle++
+	if PPU_Cycle > 340 {
+		PPU_Cycle = 0
+		PPU_ScanLine++
+		if PPU_ScanLine > 261 {
+			PPU_ScanLine = 0
+			PPU_Frame++
+			PPU_f ^= 1
 		}
 	}
 }
 
 // Step executes a single PPU cycle
-func (this *PPU) Step() {
-	this.tick()
+func PPU_Step() {
+	PPU_tick()
 
-	renderingEnabled := this.flagShowBackground != 0 || this.flagShowSprites != 0
-	preLine := this.ScanLine == 261
-	visibleLine := this.ScanLine < 240
-	// postLine := this.ScanLine == 240
+	renderingEnabled := PPU_flagShowBackground != 0 || PPU_flagShowSprites != 0
+	preLine := PPU_ScanLine == 261
+	visibleLine := PPU_ScanLine < 240
+	// postLine := PPU_ScanLine == 240
 	renderLine := preLine || visibleLine
-	preFetchCycle := this.Cycle >= 321 && this.Cycle <= 336
-	visibleCycle := this.Cycle >= 1 && this.Cycle <= 256
+	preFetchCycle := PPU_Cycle >= 321 && PPU_Cycle <= 336
+	visibleCycle := PPU_Cycle >= 1 && PPU_Cycle <= 256
 	fetchCycle := preFetchCycle || visibleCycle
 
 	// background logic
 	if renderingEnabled {
 		if visibleLine && visibleCycle {
-			this.renderPixel()
+			PPU_renderPixel()
 		}
 		if renderLine && fetchCycle {
-			this.tileData <<= 4
-			switch this.Cycle % 8 {
+			PPU_tileData <<= 4
+			switch PPU_Cycle % 8 {
 			case 1:
-				this.fetchNameTableByte()
+				PPU_fetchNameTableByte()
 			case 3:
-				this.fetchAttributeTableByte()
+				PPU_fetchAttributeTableByte()
 			case 5:
-				this.fetchLowTileByte()
+				PPU_fetchLowTileByte()
 			case 7:
-				this.fetchHighTileByte()
+				PPU_fetchHighTileByte()
 			case 0:
-				this.storeTileData()
+				PPU_storeTileData()
 			}
 		}
-		if preLine && this.Cycle >= 280 && this.Cycle <= 304 {
-			this.copyY()
+		if preLine && PPU_Cycle >= 280 && PPU_Cycle <= 304 {
+			PPU_copyY()
 		}
 		if renderLine {
-			if fetchCycle && this.Cycle%8 == 0 {
-				this.incrementX()
+			if fetchCycle && PPU_Cycle%8 == 0 {
+				PPU_incrementX()
 			}
-			if this.Cycle == 256 {
-				this.incrementY()
+			if PPU_Cycle == 256 {
+				PPU_incrementY()
 			}
-			if this.Cycle == 257 {
-				this.copyX()
+			if PPU_Cycle == 257 {
+				PPU_copyX()
 			}
 		}
 	}
 
 	// sprite logic
 	if renderingEnabled {
-		if this.Cycle == 257 {
+		if PPU_Cycle == 257 {
 			if visibleLine {
-				this.evaluateSprites()
+				PPU_evaluateSprites()
 			} else {
-				this.spriteCount = 0
+				PPU_spriteCount = 0
 			}
 		}
 	}
 
 	// vblank logic
-	if this.ScanLine == 241 && this.Cycle == 1 {
-		this.setVerticalBlank()
+	if PPU_ScanLine == 241 && PPU_Cycle == 1 {
+		PPU_setVerticalBlank()
 	}
-	if preLine && this.Cycle == 1 {
-		this.clearVerticalBlank()
-		this.flagSpriteZeroHit = 0
-		this.flagSpriteOverflow = 0
+	if preLine && PPU_Cycle == 1 {
+		PPU_clearVerticalBlank()
+		PPU_flagSpriteZeroHit = 0
+		PPU_flagSpriteOverflow = 0
 	}
 }

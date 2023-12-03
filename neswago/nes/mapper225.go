@@ -4,15 +4,14 @@ package nes
 // https://wiki.nesdev.com/w/index.php/INES_Mapper_225
 
 type Mapper225 struct {
-	*Cartridge
 	chrBank  int
 	prgBank1 int
 	prgBank2 int
 }
 
-func NewMapper225(cartridge *Cartridge) Mapper {
-	prgBanks := len(cartridge.PRG) / 0x4000
-	return &Mapper225{cartridge, 0, 0, prgBanks - 1}
+func NewMapper225() Mapper {
+	prgBanks := len(Cartridge_PRG) / 0x4000
+	return &Mapper225{0, 0, prgBanks - 1}
 }
 
 func (this *Mapper225) Step() {
@@ -22,16 +21,16 @@ func (this *Mapper225) Read(address uint16) byte {
 	switch {
 	case address < 0x2000:
 		index := this.chrBank*0x2000 + int(address)
-		return this.CHR[index]
+		return Cartridge_CHR[index]
 	case address >= 0xC000:
 		index := this.prgBank2*0x4000 + int(address-0xC000)
-		return this.PRG[index]
+		return Cartridge_PRG[index]
 	case address >= 0x8000:
 		index := this.prgBank1*0x4000 + int(address-0x8000)
-		return this.PRG[index]
+		return Cartridge_PRG[index]
 	case address >= 0x6000:
 		index := int(address) - 0x6000
-		return this.SRAM[index]
+		return Cartridge_SRAM[index]
 	default:
 		log_Fatalf("unhandled Mapper225 read at address: 0x%04X", address)
 	}
@@ -57,9 +56,9 @@ func (this *Mapper225) Write(address uint16, value byte) {
 	}
 	mirr := (A >> 13) & 1
 	if mirr == 1 {
-		this.Cartridge.Mirror = MirrorHorizontal
+		Cartridge_Mirror = MirrorHorizontal
 	} else {
-		this.Cartridge.Mirror = MirrorVertical
+		Cartridge_Mirror = MirrorVertical
 	}
 
 	// fmt.Println(address, mirr, mode, prg)

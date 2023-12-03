@@ -4,79 +4,73 @@ import (
 	"image"
 )
 
-type Console struct {
-	CPU         *CPU
-	APU         *APU
-	PPU         *PPU
-	Cartridge   *Cartridge
-	Controller1 *Controller
-	Controller2 *Controller
-	Mapper      Mapper
-	RAM         []byte
-}
+var Consol_Mapper Mapper
+var nes_RAM []byte
 
-func NewConsole(romBytes []byte) (*Console, error) {
-	cartridge, err := LoadNESFile(romBytes)
+var Nes_Controller1 *Controller
+var Nes_Controller2 *Controller
+
+func InitConsole(romBytes []byte) error {
+
+	//file_log, _ = os.Create("C:\\Users\\Ending\\Desktop\\g.txt")
+
+	var err error
+	err = LoadNESFile(romBytes)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	ram := make([]byte, 2048)
-	controller1 := NewController()
-	controller2 := NewController()
-	console := Console{
-		nil, nil, nil, cartridge, controller1, controller2, nil, ram}
-	mapper, err := NewMapper(&console)
+	nes_RAM = make([]byte, 2048)
+	Nes_Controller1 = NewController()
+	Nes_Controller2 = NewController()
+	mapper, err := NewMapper()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	console.Mapper = mapper
-	console.CPU = NewCPU(&console)
-	console.APU = NewAPU(&console)
-	console.PPU = NewPPU(&console)
-	return &console, nil
+	Consol_Mapper = mapper
+	CPU_Init()
+	PPU_initNesPPU()
+	return nil
 }
 
-func (this *Console) Reset() {
-	this.CPU.Reset()
+func Consloe_Reset() {
+	CPU_Reset()
+	PPU_Reset()
 }
 
-func (this *Console) Step() int {
-	cpuCycles := this.CPU.Step()
+func Consloe_Step() int {
+	cpuCycles := CPU_Step()
 	ppuCycles := cpuCycles * 3
 	for i := 0; i < ppuCycles; i++ {
-		this.PPU.Step()
-		this.Mapper.Step()
-	}
-	for i := 0; i < cpuCycles; i++ {
-		this.APU.Step()
+		PPU_Step()
+		Consol_Mapper.Step()
 	}
 	return cpuCycles
 }
 
-func (this *Console) StepFrame() int {
+func Consloe_StepFrame() int {
 	cpuCycles := 0
-	frame := this.PPU.Frame
-	for frame == this.PPU.Frame {
-		cpuCycles += this.Step()
+	frame := PPU_Frame
+	for frame == PPU_Frame {
+		cpuCycles += Consloe_Step()
 	}
 	return cpuCycles
 }
 
-func (this *Console) StepSeconds(seconds float64) {
+func Consloe_StepSeconds(seconds float64) {
 	cycles := int(CPUFrequency * seconds)
 	for cycles > 0 {
-		cycles -= this.Step()
+		cycles -= Consloe_Step()
 	}
 }
 
-func (this *Console) Buffer() *image.RGBA {
-	return this.PPU.front
+func Consloe_Buffer() *image.RGBA {
+	return PPU_front
 }
 
-func (this *Console) SetButtons1(buttons [8]bool) {
-	this.Controller1.SetButtons(buttons)
+func Consloe_SetButtons1(buttons [8]bool) {
+	Nes_Controller1.SetButtons(buttons)
 }
 
-func (this *Console) SetButtons2(buttons [8]bool) {
-	this.Controller2.SetButtons(buttons)
+func Consloe_SetButtons2(buttons [8]bool) {
+	Nes_Controller2.SetButtons(buttons)
 }

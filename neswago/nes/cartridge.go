@@ -1,15 +1,17 @@
 package nes
 
-type Cartridge struct {
-	PRG     []byte // PRG-ROM banks
-	CHR     []byte // CHR-ROM banks
-	SRAM    []byte // Save RAM
-	Mapper  byte   // mapper type
-	Mirror  byte   // mirroring mode
-	Battery byte   // battery present
-}
+var Cartridge_PRG []byte   // PRG-ROM banks
+var Cartridge_CHR []byte   // CHR-ROM banks
+var Cartridge_SRAM []byte  // Save RAM
+var Cartridge_Mapper byte  // mapper type
+var Cartridge_Mirror byte  // mirroring mode
+var Cartridge_Battery byte // battery present
 
-func NewCartridge(prg, chr []byte, mapper, mirror, battery byte) *Cartridge {
-	sram := make([]byte, 0x2000)
-	return &Cartridge{prg, chr, sram, mapper, mirror, battery}
+func InitCartridge(prg, chr []byte, mapper, mirror, battery byte) {
+	Cartridge_PRG = prg
+	Cartridge_CHR = chr
+	Cartridge_SRAM = make([]byte, 0x2000)
+	Cartridge_Mapper = mapper
+	Cartridge_Mirror = mirror
+	Cartridge_Battery = battery
 }

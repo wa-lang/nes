@@ -25,7 +25,6 @@ func Main(name string, romBytes []byte) {
 
 type AppWindow struct {
 	window    *glfw.Window
-	console   *nes.Console
 	texture   uint32
 	timestamp float64
 }
@@ -54,28 +53,10 @@ func NewAppWindow(name string, width, height int) *AppWindow {
 }
 
 func (d *AppWindow) Run(name string, romBytes []byte) {
-	console, err := nes.NewConsole(romBytes)
+	err := nes.InitConsole(romBytes)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	d.console = console
-
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-	console.StepFrame()
-	for i := 0; i < 7793; i++ {
-		console.Step()
-	}
-	console.CPU.Dump()
-	nes.Halt = true
-	console.Step()
-	console.CPU.Dump()
 
 	d.texture = createTexture()
 
@@ -119,7 +100,7 @@ func (d *AppWindow) OnKey(
 		case glfw.KeySpace:
 			// screenshot(view.console.Buffer())
 		case glfw.KeyR:
-			d.console.Reset()
+			nes.Consloe_Reset()
 		case glfw.KeyTab:
 			//
 		}
@@ -144,21 +125,21 @@ func (d *AppWindow) Update(t, dt float64) {
 
 	// 处理键盘信息
 	{
-		turbo := d.console.PPU.Frame%6 < 3
+		turbo := nes.PPU_Frame%6 < 3
 		k1 := readKeys(window, turbo)
 		j1 := readJoystick(glfw.Joystick1, turbo)
 		j2 := readJoystick(glfw.Joystick2, turbo)
-		d.console.SetButtons1(combineButtons(k1, j1))
-		d.console.SetButtons2(j2)
+		nes.Consloe_SetButtons1(combineButtons(k1, j1))
+		nes.Consloe_SetButtons2(j2)
 	}
 
 	// 执行 NES
-	d.console.StepSeconds(dt)
+	nes.Consloe_StepFrame()
 
 	// 重要: 复制NES图形缓冲并显示!!!
 
 	gl.BindTexture(gl.TEXTURE_2D, d.texture)
-	setTexture(d.console.Buffer())
+	setTexture(nes.Consloe_Buffer())
 	d.drawBuffer()
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 }

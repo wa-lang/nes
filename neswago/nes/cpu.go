@@ -146,86 +146,86 @@ var instructionNames = [256]string{
 	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC",
 }
 
-type CPU struct {
-	*CPUMemory        // memory
-	Cycles     uint64 // number of cycles
-	PC         uint16 // program counter
-	SP         byte   // stack pointer
-	A          byte   // accumulator
-	X          byte   // x register
-	Y          byte   // y register
-	C          byte   // carry flag
-	Z          byte   // zero flag
-	I          byte   // interrupt disable flag
-	D          byte   // decimal mode flag
-	B          byte   // break command flag
-	U          byte   // unused flag
-	V          byte   // overflow flag
-	N          byte   // negative flag
-	interrupt  byte   // interrupt type to perform
-	stall      int    // number of cycles to stall
-	table      [256]func(*stepInfo)
-}
+var CPU_Cycles uint64  // number of cycles
+var CPU_PC uint16      // program counter
+var CPU_SP byte        // stack pointer
+var CPU_A byte         // accumulator
+var CPU_X byte         // x register
+var CPU_Y byte         // y register
+var CPU_C byte         // carry flag
+var CPU_Z byte         // zero flag
+var CPU_I byte         // interrupt disable flag
+var CPU_D byte         // decimal mode flag
+var CPU_B byte         // break command flag
+var CPU_U byte         // unused flag
+var CPU_V byte         // overflow flag
+var CPU_N byte         // negative flag
+var CPU_interrupt byte // interrupt type to perform
+var CPU_stall int      // number of cycles to stall
+var CPU_table [256]func(*stepInfo)
 
-func (this *CPU) Dump() {
-	print("{ ", this.Cycles, " ", this.PC, " ", this.SP, " ", this.A, " ", this.X, " ", this.Y, " ", this.C, " ", this.Z, " ", this.I, " ", this.D, " ", this.B, " ", this.U, " ", this.V, " ", this.N, " ", this.interrupt, " ", this.stall, " }")
-	for _, v := range this.CPUMemory.console.RAM {
-		print(v)
-		print(" ")
-	}
-	println("")
-}
+//func CPU_Dump() {
+//	f := file_log
+//
+//	fmt.Fprint(f, "CPU: { ", CPU_Cycles, " ", CPU_PC, " ", CPU_SP)
+//	fmt.Fprint(f, "\n ", CPU_A, " ", CPU_X, " ", CPU_Y, " ", CPU_C, " ", CPU_Z, " ", CPU_I, " ", CPU_D, " ", CPU_B, " ", CPU_U, " ", CPU_V, " ", CPU_N)
+//	fmt.Fprint(f, "\n ", CPU_interrupt, " ", CPU_stall, " }")
+//	fmt.Fprint(f, "\n RAM:")
+//	for _, v := range nes_RAM {
+//		fmt.Fprint(f, v)
+//		fmt.Fprint(f, " ")
+//	}
+//	fmt.Fprintln(f, "")
+//}
 
-func NewCPU(console *Console) *CPU {
-	this := &CPU{CPUMemory: NewCPUMemory(console)}
-	this.createTable()
-	this.Reset()
-	return this
+func CPU_Init() {
+	CPU_createTable()
+	CPU_Reset()
 }
 
 // createTable builds a function table for each instruction
-func (this *CPU) createTable() {
-	this.table = [256]func(*stepInfo){
-		this.brk, this.ora, this.kil, this.slo, this.nop, this.ora, this.asl, this.slo,
-		this.php, this.ora, this.asl, this.anc, this.nop, this.ora, this.asl, this.slo,
-		this.bpl, this.ora, this.kil, this.slo, this.nop, this.ora, this.asl, this.slo,
-		this.clc, this.ora, this.nop, this.slo, this.nop, this.ora, this.asl, this.slo,
-		this.jsr, this.and, this.kil, this.rla, this.bit, this.and, this.rol, this.rla,
-		this.plp, this.and, this.rol, this.anc, this.bit, this.and, this.rol, this.rla,
-		this.bmi, this.and, this.kil, this.rla, this.nop, this.and, this.rol, this.rla,
-		this.sec, this.and, this.nop, this.rla, this.nop, this.and, this.rol, this.rla,
-		this.rti, this.eor, this.kil, this.sre, this.nop, this.eor, this.lsr, this.sre,
-		this.pha, this.eor, this.lsr, this.alr, this.jmp, this.eor, this.lsr, this.sre,
-		this.bvc, this.eor, this.kil, this.sre, this.nop, this.eor, this.lsr, this.sre,
-		this.cli, this.eor, this.nop, this.sre, this.nop, this.eor, this.lsr, this.sre,
-		this.rts, this.adc, this.kil, this.rra, this.nop, this.adc, this.ror, this.rra,
-		this.pla, this.adc, this.ror, this.arr, this.jmp, this.adc, this.ror, this.rra,
-		this.bvs, this.adc, this.kil, this.rra, this.nop, this.adc, this.ror, this.rra,
-		this.sei, this.adc, this.nop, this.rra, this.nop, this.adc, this.ror, this.rra,
-		this.nop, this.sta, this.nop, this.sax, this.sty, this.sta, this.stx, this.sax,
-		this.dey, this.nop, this.txa, this.xaa, this.sty, this.sta, this.stx, this.sax,
-		this.bcc, this.sta, this.kil, this.ahx, this.sty, this.sta, this.stx, this.sax,
-		this.tya, this.sta, this.txs, this.tas, this.shy, this.sta, this.shx, this.ahx,
-		this.ldy, this.lda, this.ldx, this.lax, this.ldy, this.lda, this.ldx, this.lax,
-		this.tay, this.lda, this.tax, this.lax, this.ldy, this.lda, this.ldx, this.lax,
-		this.bcs, this.lda, this.kil, this.lax, this.ldy, this.lda, this.ldx, this.lax,
-		this.clv, this.lda, this.tsx, this.las, this.ldy, this.lda, this.ldx, this.lax,
-		this.cpy, this.cmp, this.nop, this.dcp, this.cpy, this.cmp, this.dec, this.dcp,
-		this.iny, this.cmp, this.dex, this.axs, this.cpy, this.cmp, this.dec, this.dcp,
-		this.bne, this.cmp, this.kil, this.dcp, this.nop, this.cmp, this.dec, this.dcp,
-		this.cld, this.cmp, this.nop, this.dcp, this.nop, this.cmp, this.dec, this.dcp,
-		this.cpx, this.sbc, this.nop, this.isc, this.cpx, this.sbc, this.inc, this.isc,
-		this.inx, this.sbc, this.nop, this.sbc, this.cpx, this.sbc, this.inc, this.isc,
-		this.beq, this.sbc, this.kil, this.isc, this.nop, this.sbc, this.inc, this.isc,
-		this.sed, this.sbc, this.nop, this.isc, this.nop, this.sbc, this.inc, this.isc,
+func CPU_createTable() {
+	CPU_table = [256]func(*stepInfo){
+		CPU_brk, CPU_ora, CPU_kil, CPU_slo, CPU_nop, CPU_ora, CPU_asl, CPU_slo,
+		CPU_php, CPU_ora, CPU_asl, CPU_anc, CPU_nop, CPU_ora, CPU_asl, CPU_slo,
+		CPU_bpl, CPU_ora, CPU_kil, CPU_slo, CPU_nop, CPU_ora, CPU_asl, CPU_slo,
+		CPU_clc, CPU_ora, CPU_nop, CPU_slo, CPU_nop, CPU_ora, CPU_asl, CPU_slo,
+		CPU_jsr, CPU_and, CPU_kil, CPU_rla, CPU_bit, CPU_and, CPU_rol, CPU_rla,
+		CPU_plp, CPU_and, CPU_rol, CPU_anc, CPU_bit, CPU_and, CPU_rol, CPU_rla,
+		CPU_bmi, CPU_and, CPU_kil, CPU_rla, CPU_nop, CPU_and, CPU_rol, CPU_rla,
+		CPU_sec, CPU_and, CPU_nop, CPU_rla, CPU_nop, CPU_and, CPU_rol, CPU_rla,
+		CPU_rti, CPU_eor, CPU_kil, CPU_sre, CPU_nop, CPU_eor, CPU_lsr, CPU_sre,
+		CPU_pha, CPU_eor, CPU_lsr, CPU_alr, CPU_jmp, CPU_eor, CPU_lsr, CPU_sre,
+		CPU_bvc, CPU_eor, CPU_kil, CPU_sre, CPU_nop, CPU_eor, CPU_lsr, CPU_sre,
+		CPU_cli, CPU_eor, CPU_nop, CPU_sre, CPU_nop, CPU_eor, CPU_lsr, CPU_sre,
+		CPU_rts, CPU_adc, CPU_kil, CPU_rra, CPU_nop, CPU_adc, CPU_ror, CPU_rra,
+		CPU_pla, CPU_adc, CPU_ror, CPU_arr, CPU_jmp, CPU_adc, CPU_ror, CPU_rra,
+		CPU_bvs, CPU_adc, CPU_kil, CPU_rra, CPU_nop, CPU_adc, CPU_ror, CPU_rra,
+		CPU_sei, CPU_adc, CPU_nop, CPU_rra, CPU_nop, CPU_adc, CPU_ror, CPU_rra,
+		CPU_nop, CPU_sta, CPU_nop, CPU_sax, CPU_sty, CPU_sta, CPU_stx, CPU_sax,
+		CPU_dey, CPU_nop, CPU_txa, CPU_xaa, CPU_sty, CPU_sta, CPU_stx, CPU_sax,
+		CPU_bcc, CPU_sta, CPU_kil, CPU_ahx, CPU_sty, CPU_sta, CPU_stx, CPU_sax,
+		CPU_tya, CPU_sta, CPU_txs, CPU_tas, CPU_shy, CPU_sta, CPU_shx, CPU_ahx,
+		CPU_ldy, CPU_lda, CPU_ldx, CPU_lax, CPU_ldy, CPU_lda, CPU_ldx, CPU_lax,
+		CPU_tay, CPU_lda, CPU_tax, CPU_lax, CPU_ldy, CPU_lda, CPU_ldx, CPU_lax,
+		CPU_bcs, CPU_lda, CPU_kil, CPU_lax, CPU_ldy, CPU_lda, CPU_ldx, CPU_lax,
+		CPU_clv, CPU_lda, CPU_tsx, CPU_las, CPU_ldy, CPU_lda, CPU_ldx, CPU_lax,
+		CPU_cpy, CPU_cmp, CPU_nop, CPU_dcp, CPU_cpy, CPU_cmp, CPU_dec, CPU_dcp,
+		CPU_iny, CPU_cmp, CPU_dex, CPU_axs, CPU_cpy, CPU_cmp, CPU_dec, CPU_dcp,
+		CPU_bne, CPU_cmp, CPU_kil, CPU_dcp, CPU_nop, CPU_cmp, CPU_dec, CPU_dcp,
+		CPU_cld, CPU_cmp, CPU_nop, CPU_dcp, CPU_nop, CPU_cmp, CPU_dec, CPU_dcp,
+		CPU_cpx, CPU_sbc, CPU_nop, CPU_isc, CPU_cpx, CPU_sbc, CPU_inc, CPU_isc,
+		CPU_inx, CPU_sbc, CPU_nop, CPU_sbc, CPU_cpx, CPU_sbc, CPU_inc, CPU_isc,
+		CPU_beq, CPU_sbc, CPU_kil, CPU_isc, CPU_nop, CPU_sbc, CPU_inc, CPU_isc,
+		CPU_sed, CPU_sbc, CPU_nop, CPU_isc, CPU_nop, CPU_sbc, CPU_inc, CPU_isc,
 	}
 }
 
 // Reset resets the CPU to its initial powerup state
-func (this *CPU) Reset() {
-	this.PC = this.Read16(0xFFFC)
-	this.SP = 0xFD
-	this.SetFlags(0x24)
+func CPU_Reset() {
+	CPU_PC = CPU_Read16(0xFFFC)
+	CPU_SP = 0xFD
+	CPU_SetFlags(0x24)
 }
 
 // pagesDiffer returns true if the two addresses reference different pages
@@ -235,125 +235,125 @@ func pagesDiffer(a, b uint16) bool {
 
 // addBranchCycles adds a cycle for taking a branch and adds another cycle
 // if the branch jumps to a new page
-func (this *CPU) addBranchCycles(info *stepInfo) {
-	this.Cycles++
+func CPU_addBranchCycles(info *stepInfo) {
+	CPU_Cycles++
 	if pagesDiffer(info.pc, info.address) {
-		this.Cycles++
+		CPU_Cycles++
 	}
 }
 
-func (this *CPU) compare(a, b byte) {
-	this.setZN(a - b)
+func CPU_compare(a, b byte) {
+	CPU_setZN(a - b)
 	if a >= b {
-		this.C = 1
+		CPU_C = 1
 	} else {
-		this.C = 0
+		CPU_C = 0
 	}
 }
 
 // Read16 reads two bytes using Read to return a double-word value
-func (this *CPU) Read16(address uint16) uint16 {
-	lo := uint16(this.Read(address))
-	hi := uint16(this.Read(address + 1))
+func CPU_Read16(address uint16) uint16 {
+	lo := uint16(CPUMemory_Read(address))
+	hi := uint16(CPUMemory_Read(address + 1))
 	return hi<<8 | lo
 }
 
 // read16bug emulates a 6502 bug that caused the low byte to wrap without
 // incrementing the high byte
-func (this *CPU) read16bug(address uint16) uint16 {
+func CPU_read16bug(address uint16) uint16 {
 	a := address
 	b := (a & 0xFF00) | uint16(byte(a)+1)
-	lo := this.Read(a)
-	hi := this.Read(b)
+	lo := CPUMemory_Read(a)
+	hi := CPUMemory_Read(b)
 	return uint16(hi)<<8 | uint16(lo)
 }
 
 // push pushes a byte onto the stack
-func (this *CPU) push(value byte) {
-	this.Write(0x100|uint16(this.SP), value)
-	this.SP--
+func CPU_push(value byte) {
+	CPUMemory_Write(0x100|uint16(CPU_SP), value)
+	CPU_SP--
 }
 
 // pull pops a byte from the stack
-func (this *CPU) pull() byte {
-	this.SP++
-	return this.Read(0x100 | uint16(this.SP))
+func CPU_pull() byte {
+	CPU_SP++
+	return CPUMemory_Read(0x100 | uint16(CPU_SP))
 }
 
 // push16 pushes two bytes onto the stack
-func (this *CPU) push16(value uint16) {
+func CPU_push16(value uint16) {
 	hi := byte(value >> 8)
 	lo := byte(value & 0xFF)
-	this.push(hi)
-	this.push(lo)
+	CPU_push(hi)
+	CPU_push(lo)
 }
 
 // pull16 pops two bytes from the stack
-func (this *CPU) pull16() uint16 {
-	lo := uint16(this.pull())
-	hi := uint16(this.pull())
+func CPU_pull16() uint16 {
+	lo := uint16(CPU_pull())
+	hi := uint16(CPU_pull())
 	return hi<<8 | lo
 }
 
 // Flags returns the processor status flags
-func (this *CPU) Flags() byte {
+func CPU_Flags() byte {
 	var flags byte
-	flags |= this.C << 0
-	flags |= this.Z << 1
-	flags |= this.I << 2
-	flags |= this.D << 3
-	flags |= this.B << 4
-	flags |= this.U << 5
-	flags |= this.V << 6
-	flags |= this.N << 7
+	flags |= CPU_C << 0
+	flags |= CPU_Z << 1
+	flags |= CPU_I << 2
+	flags |= CPU_D << 3
+	flags |= CPU_B << 4
+	flags |= CPU_U << 5
+	flags |= CPU_V << 6
+	flags |= CPU_N << 7
 	return flags
 }
 
 // SetFlags sets the processor status flags
-func (this *CPU) SetFlags(flags byte) {
-	this.C = (flags >> 0) & 1
-	this.Z = (flags >> 1) & 1
-	this.I = (flags >> 2) & 1
-	this.D = (flags >> 3) & 1
-	this.B = (flags >> 4) & 1
-	this.U = (flags >> 5) & 1
-	this.V = (flags >> 6) & 1
-	this.N = (flags >> 7) & 1
+func CPU_SetFlags(flags byte) {
+	CPU_C = (flags >> 0) & 1
+	CPU_Z = (flags >> 1) & 1
+	CPU_I = (flags >> 2) & 1
+	CPU_D = (flags >> 3) & 1
+	CPU_B = (flags >> 4) & 1
+	CPU_U = (flags >> 5) & 1
+	CPU_V = (flags >> 6) & 1
+	CPU_N = (flags >> 7) & 1
 }
 
 // setZ sets the zero flag if the argument is zero
-func (this *CPU) setZ(value byte) {
+func CPU_setZ(value byte) {
 	if value == 0 {
-		this.Z = 1
+		CPU_Z = 1
 	} else {
-		this.Z = 0
+		CPU_Z = 0
 	}
 }
 
 // setN sets the negative flag if the argument is negative (high bit is set)
-func (this *CPU) setN(value byte) {
+func CPU_setN(value byte) {
 	if value&0x80 != 0 {
-		this.N = 1
+		CPU_N = 1
 	} else {
-		this.N = 0
+		CPU_N = 0
 	}
 }
 
 // setZN sets the zero flag and the negative flag
-func (this *CPU) setZN(value byte) {
-	this.setZ(value)
-	this.setN(value)
+func CPU_setZN(value byte) {
+	CPU_setZ(value)
+	CPU_setN(value)
 }
 
 // triggerNMI causes a non-maskable interrupt to occur on the next cycle
-func (this *CPU) triggerNMI() {
-	this.interrupt = interruptNMI
+func CPU_triggerNMI() {
+	CPU_interrupt = interruptNMI
 }
 
 // triggerIRQ causes an IRQ interrupt to occur on the next cycle
-func (this *CPU) triggerIRQ() {
-	if this.I == 0 {
-		this.interrupt = interruptIRQ
+func CPU_triggerIRQ() {
+	if CPU_I == 0 {
+		CPU_interrupt = interruptIRQ
 	}
 }
 
@@ -364,565 +364,556 @@ type stepInfo struct {
 	mode    byte
 }
 
-var Halt bool
-
 // Step executes a single CPU instruction
-func (this *CPU) Step() int {
-	if this.stall > 0 {
-		this.stall--
+func CPU_Step() int {
+	if CPU_stall > 0 {
+		CPU_stall--
 		return 1
 	}
 
-	cycles := this.Cycles
+	cycles := CPU_Cycles
 
-	switch this.interrupt {
+	switch CPU_interrupt {
 	case interruptNMI:
-		this.nmi()
+		CPU_nmi()
 	case interruptIRQ:
-		this.irq()
+		CPU_irq()
 	}
-	this.interrupt = interruptNone
+	CPU_interrupt = interruptNone
 
-	opcode := this.Read(this.PC)
+	opcode := CPUMemory_Read(CPU_PC)
 	mode := instructionModes[opcode]
 
 	var address uint16
 	var pageCrossed bool
 	switch mode {
 	case modeAbsolute:
-		address = this.Read16(this.PC + 1)
+		address = CPU_Read16(CPU_PC + 1)
 	case modeAbsoluteX:
-		address = this.Read16(this.PC+1) + uint16(this.X)
-		pageCrossed = pagesDiffer(address-uint16(this.X), address)
+		address = CPU_Read16(CPU_PC+1) + uint16(CPU_X)
+		pageCrossed = pagesDiffer(address-uint16(CPU_X), address)
 	case modeAbsoluteY:
-		address = this.Read16(this.PC+1) + uint16(this.Y)
-		pageCrossed = pagesDiffer(address-uint16(this.Y), address)
+		address = CPU_Read16(CPU_PC+1) + uint16(CPU_Y)
+		pageCrossed = pagesDiffer(address-uint16(CPU_Y), address)
 	case modeAccumulator:
 		address = 0
 	case modeImmediate:
-		address = this.PC + 1
+		address = CPU_PC + 1
 	case modeImplied:
 		address = 0
 	case modeIndexedIndirect:
-		address = this.read16bug(uint16(this.Read(this.PC+1) + this.X))
+		address = CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1) + CPU_X))
 	case modeIndirect:
-		address = this.read16bug(this.Read16(this.PC + 1))
+		address = CPU_read16bug(CPU_Read16(CPU_PC + 1))
 	case modeIndirectIndexed:
-		address = this.read16bug(uint16(this.Read(this.PC+1))) + uint16(this.Y)
-		pageCrossed = pagesDiffer(address-uint16(this.Y), address)
+		address = CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1))) + uint16(CPU_Y)
+		pageCrossed = pagesDiffer(address-uint16(CPU_Y), address)
 	case modeRelative:
-		offset := uint16(this.Read(this.PC + 1))
+		offset := uint16(CPUMemory_Read(CPU_PC + 1))
 		if offset < 0x80 {
-			address = this.PC + 2 + offset
+			address = CPU_PC + 2 + offset
 		} else {
-			address = this.PC + 2 + offset - 0x100
+			address = CPU_PC + 2 + offset - 0x100
 		}
 	case modeZeroPage:
-		address = uint16(this.Read(this.PC + 1))
+		address = uint16(CPUMemory_Read(CPU_PC + 1))
 	case modeZeroPageX:
-		address = uint16(this.Read(this.PC+1)+this.X) & 0xff
+		address = uint16(CPUMemory_Read(CPU_PC+1)+CPU_X) & 0xff
 	case modeZeroPageY:
-		address = uint16(this.Read(this.PC+1)+this.Y) & 0xff
+		address = uint16(CPUMemory_Read(CPU_PC+1)+CPU_Y) & 0xff
 	}
 
-	this.PC += uint16(instructionSizes[opcode])
-	this.Cycles += uint64(instructionCycles[opcode])
+	CPU_PC += uint16(instructionSizes[opcode])
+	CPU_Cycles += uint64(instructionCycles[opcode])
 	if pageCrossed {
-		this.Cycles += uint64(instructionPageCycles[opcode])
+		CPU_Cycles += uint64(instructionPageCycles[opcode])
 	}
-	info := &stepInfo{address, this.PC, mode}
+	info := &stepInfo{address, CPU_PC, mode}
 
-	if Halt {
-		println(info.address, " ", info.pc, " ", info.mode, " ", instructionNames[opcode])
-	}
+	CPU_table[opcode](info)
 
-	this.table[opcode](info)
-
-	return int(this.Cycles - cycles)
+	return int(CPU_Cycles - cycles)
 }
 
 // NMI - Non-Maskable Interrupt
-func (this *CPU) nmi() {
-	this.push16(this.PC)
-	this.php(nil)
-	this.PC = this.Read16(0xFFFA)
-	this.I = 1
-	this.Cycles += 7
+func CPU_nmi() {
+	CPU_push16(CPU_PC)
+	CPU_php(nil)
+	CPU_PC = CPU_Read16(0xFFFA)
+	CPU_I = 1
+	CPU_Cycles += 7
 }
 
 // IRQ - IRQ Interrupt
-func (this *CPU) irq() {
-	this.push16(this.PC)
-	this.php(nil)
-	this.PC = this.Read16(0xFFFE)
-	this.I = 1
-	this.Cycles += 7
+func CPU_irq() {
+	CPU_push16(CPU_PC)
+	CPU_php(nil)
+	CPU_PC = CPU_Read16(0xFFFE)
+	CPU_I = 1
+	CPU_Cycles += 7
 }
 
 // ADC - Add with Carry
-func (this *CPU) adc(info *stepInfo) {
-	a := this.A
-	b := this.Read(info.address)
-	c := this.C
-	this.A = a + b + c
-	this.setZN(this.A)
+func CPU_adc(info *stepInfo) {
+	a := CPU_A
+	b := CPUMemory_Read(info.address)
+	c := CPU_C
+	CPU_A = a + b + c
+	CPU_setZN(CPU_A)
 	if int(a)+int(b)+int(c) > 0xFF {
-		this.C = 1
+		CPU_C = 1
 	} else {
-		this.C = 0
+		CPU_C = 0
 	}
-	if (a^b)&0x80 == 0 && (a^this.A)&0x80 != 0 {
-		this.V = 1
+	if (a^b)&0x80 == 0 && (a^CPU_A)&0x80 != 0 {
+		CPU_V = 1
 	} else {
-		this.V = 0
+		CPU_V = 0
 	}
 }
 
 // AND - Logical AND
-func (this *CPU) and(info *stepInfo) {
-	this.A = this.A & this.Read(info.address)
-	this.setZN(this.A)
+func CPU_and(info *stepInfo) {
+	CPU_A = CPU_A & CPUMemory_Read(info.address)
+	CPU_setZN(CPU_A)
 }
 
 // ASL - Arithmetic Shift Left
-func (this *CPU) asl(info *stepInfo) {
+func CPU_asl(info *stepInfo) {
 	if info.mode == modeAccumulator {
-		this.C = (this.A >> 7) & 1
-		this.A <<= 1
-		this.setZN(this.A)
+		CPU_C = (CPU_A >> 7) & 1
+		CPU_A <<= 1
+		CPU_setZN(CPU_A)
 	} else {
-		value := this.Read(info.address)
-		this.C = (value >> 7) & 1
+		value := CPUMemory_Read(info.address)
+		CPU_C = (value >> 7) & 1
 		value <<= 1
-		this.Write(info.address, value)
-		this.setZN(value)
+		CPUMemory_Write(info.address, value)
+		CPU_setZN(value)
 	}
 }
 
 // BCC - Branch if Carry Clear
-func (this *CPU) bcc(info *stepInfo) {
-	if this.C == 0 {
-		this.PC = info.address
-		this.addBranchCycles(info)
+func CPU_bcc(info *stepInfo) {
+	if CPU_C == 0 {
+		CPU_PC = info.address
+		CPU_addBranchCycles(info)
 	}
 }
 
 // BCS - Branch if Carry Set
-func (this *CPU) bcs(info *stepInfo) {
-	if this.C != 0 {
-		this.PC = info.address
-		this.addBranchCycles(info)
+func CPU_bcs(info *stepInfo) {
+	if CPU_C != 0 {
+		CPU_PC = info.address
+		CPU_addBranchCycles(info)
 	}
 }
 
 // BEQ - Branch if Equal
-func (this *CPU) beq(info *stepInfo) {
-	if this.Z != 0 {
-		this.PC = info.address
-		this.addBranchCycles(info)
+func CPU_beq(info *stepInfo) {
+	if CPU_Z != 0 {
+		CPU_PC = info.address
+		CPU_addBranchCycles(info)
 	}
 }
 
 // BIT - Bit Test
-func (this *CPU) bit(info *stepInfo) {
-	value := this.Read(info.address)
-	this.V = (value >> 6) & 1
-	this.setZ(value & this.A)
-	this.setN(value)
+func CPU_bit(info *stepInfo) {
+	value := CPUMemory_Read(info.address)
+	CPU_V = (value >> 6) & 1
+	CPU_setZ(value & CPU_A)
+	CPU_setN(value)
 }
 
 // BMI - Branch if Minus
-func (this *CPU) bmi(info *stepInfo) {
-	if this.N != 0 {
-		this.PC = info.address
-		this.addBranchCycles(info)
+func CPU_bmi(info *stepInfo) {
+	if CPU_N != 0 {
+		CPU_PC = info.address
+		CPU_addBranchCycles(info)
 	}
 }
 
 // BNE - Branch if Not Equal
-func (this *CPU) bne(info *stepInfo) {
-	if this.Z == 0 {
-		this.PC = info.address
-		this.addBranchCycles(info)
+func CPU_bne(info *stepInfo) {
+	if CPU_Z == 0 {
+		CPU_PC = info.address
+		CPU_addBranchCycles(info)
 	}
 }
 
 // BPL - Branch if Positive
-func (this *CPU) bpl(info *stepInfo) {
-	if this.N == 0 {
-		this.PC = info.address
-		this.addBranchCycles(info)
+func CPU_bpl(info *stepInfo) {
+	if CPU_N == 0 {
+		CPU_PC = info.address
+		CPU_addBranchCycles(info)
 	}
 }
 
 // BRK - Force Interrupt
-func (this *CPU) brk(info *stepInfo) {
-	this.push16(this.PC)
-	this.php(info)
-	this.sei(info)
-	this.PC = this.Read16(0xFFFE)
+func CPU_brk(info *stepInfo) {
+	CPU_push16(CPU_PC)
+	CPU_php(info)
+	CPU_sei(info)
+	CPU_PC = CPU_Read16(0xFFFE)
 }
 
 // BVC - Branch if Overflow Clear
-func (this *CPU) bvc(info *stepInfo) {
-	if this.V == 0 {
-		this.PC = info.address
-		this.addBranchCycles(info)
+func CPU_bvc(info *stepInfo) {
+	if CPU_V == 0 {
+		CPU_PC = info.address
+		CPU_addBranchCycles(info)
 	}
 }
 
 // BVS - Branch if Overflow Set
-func (this *CPU) bvs(info *stepInfo) {
-	if this.V != 0 {
-		this.PC = info.address
-		this.addBranchCycles(info)
+func CPU_bvs(info *stepInfo) {
+	if CPU_V != 0 {
+		CPU_PC = info.address
+		CPU_addBranchCycles(info)
 	}
 }
 
 // CLC - Clear Carry Flag
-func (this *CPU) clc(info *stepInfo) {
-	this.C = 0
+func CPU_clc(info *stepInfo) {
+	CPU_C = 0
 }
 
 // CLD - Clear Decimal Mode
-func (this *CPU) cld(info *stepInfo) {
-	this.D = 0
+func CPU_cld(info *stepInfo) {
+	CPU_D = 0
 }
 
 // CLI - Clear Interrupt Disable
-func (this *CPU) cli(info *stepInfo) {
-	this.I = 0
+func CPU_cli(info *stepInfo) {
+	CPU_I = 0
 }
 
 // CLV - Clear Overflow Flag
-func (this *CPU) clv(info *stepInfo) {
-	this.V = 0
+func CPU_clv(info *stepInfo) {
+	CPU_V = 0
 }
 
 // CMP - Compare
-func (this *CPU) cmp(info *stepInfo) {
-	value := this.Read(info.address)
-	this.compare(this.A, value)
+func CPU_cmp(info *stepInfo) {
+	value := CPUMemory_Read(info.address)
+	CPU_compare(CPU_A, value)
 }
 
 // CPX - Compare X Register
-func (this *CPU) cpx(info *stepInfo) {
-	value := this.Read(info.address)
-	this.compare(this.X, value)
+func CPU_cpx(info *stepInfo) {
+	value := CPUMemory_Read(info.address)
+	CPU_compare(CPU_X, value)
 }
 
 // CPY - Compare Y Register
-func (this *CPU) cpy(info *stepInfo) {
-	value := this.Read(info.address)
-	this.compare(this.Y, value)
+func CPU_cpy(info *stepInfo) {
+	value := CPUMemory_Read(info.address)
+	CPU_compare(CPU_Y, value)
 }
 
 // DEC - Decrement Memory
-func (this *CPU) dec(info *stepInfo) {
-	value := this.Read(info.address) - 1
-	this.Write(info.address, value)
-	this.setZN(value)
+func CPU_dec(info *stepInfo) {
+	value := CPUMemory_Read(info.address) - 1
+	CPUMemory_Write(info.address, value)
+	CPU_setZN(value)
 }
 
 // DEX - Decrement X Register
-func (this *CPU) dex(info *stepInfo) {
-	this.X--
-	this.setZN(this.X)
+func CPU_dex(info *stepInfo) {
+	CPU_X--
+	CPU_setZN(CPU_X)
 }
 
 // DEY - Decrement Y Register
-func (this *CPU) dey(info *stepInfo) {
-	this.Y--
-	this.setZN(this.Y)
+func CPU_dey(info *stepInfo) {
+	CPU_Y--
+	CPU_setZN(CPU_Y)
 }
 
 // EOR - Exclusive OR
-func (this *CPU) eor(info *stepInfo) {
-	this.A = this.A ^ this.Read(info.address)
-	this.setZN(this.A)
+func CPU_eor(info *stepInfo) {
+	CPU_A = CPU_A ^ CPUMemory_Read(info.address)
+	CPU_setZN(CPU_A)
 }
 
 // INC - Increment Memory
-func (this *CPU) inc(info *stepInfo) {
-	value := this.Read(info.address) + 1
-	this.Write(info.address, value)
-	this.setZN(value)
+func CPU_inc(info *stepInfo) {
+	value := CPUMemory_Read(info.address) + 1
+	CPUMemory_Write(info.address, value)
+	CPU_setZN(value)
 }
 
 // INX - Increment X Register
-func (this *CPU) inx(info *stepInfo) {
-	this.X++
-	this.setZN(this.X)
+func CPU_inx(info *stepInfo) {
+	CPU_X++
+	CPU_setZN(CPU_X)
 }
 
 // INY - Increment Y Register
-func (this *CPU) iny(info *stepInfo) {
-	this.Y++
-	this.setZN(this.Y)
+func CPU_iny(info *stepInfo) {
+	CPU_Y++
+	CPU_setZN(CPU_Y)
 }
 
 // JMP - Jump
-func (this *CPU) jmp(info *stepInfo) {
-	this.PC = info.address
+func CPU_jmp(info *stepInfo) {
+	CPU_PC = info.address
 }
 
 // JSR - Jump to Subroutine
-func (this *CPU) jsr(info *stepInfo) {
-	this.push16(this.PC - 1)
-	this.PC = info.address
+func CPU_jsr(info *stepInfo) {
+	CPU_push16(CPU_PC - 1)
+	CPU_PC = info.address
 }
 
 // LDA - Load Accumulator
-func (this *CPU) lda(info *stepInfo) {
-	this.A = this.Read(info.address)
-	this.setZN(this.A)
+func CPU_lda(info *stepInfo) {
+	CPU_A = CPUMemory_Read(info.address)
+	CPU_setZN(CPU_A)
 }
 
 // LDX - Load X Register
-func (this *CPU) ldx(info *stepInfo) {
-	this.X = this.Read(info.address)
-	this.setZN(this.X)
+func CPU_ldx(info *stepInfo) {
+	CPU_X = CPUMemory_Read(info.address)
+	CPU_setZN(CPU_X)
 }
 
 // LDY - Load Y Register
-func (this *CPU) ldy(info *stepInfo) {
-	this.Y = this.Read(info.address)
-	this.setZN(this.Y)
+func CPU_ldy(info *stepInfo) {
+	CPU_Y = CPUMemory_Read(info.address)
+	CPU_setZN(CPU_Y)
 }
 
 // LSR - Logical Shift Right
-func (this *CPU) lsr(info *stepInfo) {
+func CPU_lsr(info *stepInfo) {
 	if info.mode == modeAccumulator {
-		this.C = this.A & 1
-		this.A >>= 1
-		this.setZN(this.A)
+		CPU_C = CPU_A & 1
+		CPU_A >>= 1
+		CPU_setZN(CPU_A)
 	} else {
-		value := this.Read(info.address)
-		this.C = value & 1
+		value := CPUMemory_Read(info.address)
+		CPU_C = value & 1
 		value >>= 1
-		this.Write(info.address, value)
-		this.setZN(value)
+		CPUMemory_Write(info.address, value)
+		CPU_setZN(value)
 	}
 }
 
 // NOP - No Operation
-func (this *CPU) nop(info *stepInfo) {
+func CPU_nop(info *stepInfo) {
 }
 
 // ORA - Logical Inclusive OR
-func (this *CPU) ora(info *stepInfo) {
-	this.A = this.A | this.Read(info.address)
-	this.setZN(this.A)
+func CPU_ora(info *stepInfo) {
+	CPU_A = CPU_A | CPUMemory_Read(info.address)
+	CPU_setZN(CPU_A)
 }
 
 // PHA - Push Accumulator
-func (this *CPU) pha(info *stepInfo) {
-	this.push(this.A)
+func CPU_pha(info *stepInfo) {
+	CPU_push(CPU_A)
 }
 
 // PHP - Push Processor Status
-func (this *CPU) php(info *stepInfo) {
-	this.push(this.Flags() | 0x10)
+func CPU_php(info *stepInfo) {
+	CPU_push(CPU_Flags() | 0x10)
 }
 
 // PLA - Pull Accumulator
-func (this *CPU) pla(info *stepInfo) {
-	this.A = this.pull()
-	this.setZN(this.A)
+func CPU_pla(info *stepInfo) {
+	CPU_A = CPU_pull()
+	CPU_setZN(CPU_A)
 }
 
 // PLP - Pull Processor Status
-func (this *CPU) plp(info *stepInfo) {
-	this.SetFlags(this.pull()&0xEF | 0x20)
+func CPU_plp(info *stepInfo) {
+	CPU_SetFlags(CPU_pull()&0xEF | 0x20)
 }
 
 // ROL - Rotate Left
-func (this *CPU) rol(info *stepInfo) {
+func CPU_rol(info *stepInfo) {
 	if info.mode == modeAccumulator {
-		c := this.C
-		this.C = (this.A >> 7) & 1
-		this.A = (this.A << 1) | c
-		this.setZN(this.A)
+		c := CPU_C
+		CPU_C = (CPU_A >> 7) & 1
+		CPU_A = (CPU_A << 1) | c
+		CPU_setZN(CPU_A)
 	} else {
-		c := this.C
-		value := this.Read(info.address)
-		this.C = (value >> 7) & 1
+		c := CPU_C
+		value := CPUMemory_Read(info.address)
+		CPU_C = (value >> 7) & 1
 		value = (value << 1) | c
-		this.Write(info.address, value)
-		this.setZN(value)
+		CPUMemory_Write(info.address, value)
+		CPU_setZN(value)
 	}
 }
 
 // ROR - Rotate Right
-func (this *CPU) ror(info *stepInfo) {
+func CPU_ror(info *stepInfo) {
 	if info.mode == modeAccumulator {
-		c := this.C
-		this.C = this.A & 1
-		this.A = (this.A >> 1) | (c << 7)
-		this.setZN(this.A)
+		c := CPU_C
+		CPU_C = CPU_A & 1
+		CPU_A = (CPU_A >> 1) | (c << 7)
+		CPU_setZN(CPU_A)
 	} else {
-		c := this.C
-		value := this.Read(info.address)
-		this.C = value & 1
+		c := CPU_C
+		value := CPUMemory_Read(info.address)
+		CPU_C = value & 1
 		value = (value >> 1) | (c << 7)
-		this.Write(info.address, value)
-		this.setZN(value)
+		CPUMemory_Write(info.address, value)
+		CPU_setZN(value)
 	}
 }
 
 // RTI - Return from Interrupt
-func (this *CPU) rti(info *stepInfo) {
-	this.SetFlags(this.pull()&0xEF | 0x20)
-	this.PC = this.pull16()
+func CPU_rti(info *stepInfo) {
+	CPU_SetFlags(CPU_pull()&0xEF | 0x20)
+	CPU_PC = CPU_pull16()
 }
 
 // RTS - Return from Subroutine
-func (this *CPU) rts(info *stepInfo) {
-	this.PC = this.pull16() + 1
+func CPU_rts(info *stepInfo) {
+	CPU_PC = CPU_pull16() + 1
 }
 
 // SBC - Subtract with Carry
-func (this *CPU) sbc(info *stepInfo) {
-	a := this.A
-	b := this.Read(info.address)
-	c := this.C
-	this.A = a - b - (1 - c)
-	this.setZN(this.A)
+func CPU_sbc(info *stepInfo) {
+	a := CPU_A
+	b := CPUMemory_Read(info.address)
+	c := CPU_C
+	CPU_A = a - b - (1 - c)
+	CPU_setZN(CPU_A)
 	if int(a)-int(b)-int(1-c) >= 0 {
-		this.C = 1
+		CPU_C = 1
 	} else {
-		this.C = 0
+		CPU_C = 0
 	}
-	if (a^b)&0x80 != 0 && (a^this.A)&0x80 != 0 {
-		this.V = 1
+	if (a^b)&0x80 != 0 && (a^CPU_A)&0x80 != 0 {
+		CPU_V = 1
 	} else {
-		this.V = 0
+		CPU_V = 0
 	}
 }
 
 // SEC - Set Carry Flag
-func (this *CPU) sec(info *stepInfo) {
-	this.C = 1
+func CPU_sec(info *stepInfo) {
+	CPU_C = 1
 }
 
 // SED - Set Decimal Flag
-func (this *CPU) sed(info *stepInfo) {
-	this.D = 1
+func CPU_sed(info *stepInfo) {
+	CPU_D = 1
 }
 
 // SEI - Set Interrupt Disable
-func (this *CPU) sei(info *stepInfo) {
-	this.I = 1
+func CPU_sei(info *stepInfo) {
+	CPU_I = 1
 }
 
 // STA - Store Accumulator
-func (this *CPU) sta(info *stepInfo) {
-	if Halt {
-		println("CPU.sta(), info.addr:", info.address, "this.A:", this.A)
-	}
-	this.Write(info.address, this.A)
+func CPU_sta(info *stepInfo) {
+	CPUMemory_Write(info.address, CPU_A)
 }
 
 // STX - Store X Register
-func (this *CPU) stx(info *stepInfo) {
-	this.Write(info.address, this.X)
+func CPU_stx(info *stepInfo) {
+	CPUMemory_Write(info.address, CPU_X)
 }
 
 // STY - Store Y Register
-func (this *CPU) sty(info *stepInfo) {
-	this.Write(info.address, this.Y)
+func CPU_sty(info *stepInfo) {
+	CPUMemory_Write(info.address, CPU_Y)
 }
 
 // TAX - Transfer Accumulator to X
-func (this *CPU) tax(info *stepInfo) {
-	this.X = this.A
-	this.setZN(this.X)
+func CPU_tax(info *stepInfo) {
+	CPU_X = CPU_A
+	CPU_setZN(CPU_X)
 }
 
 // TAY - Transfer Accumulator to Y
-func (this *CPU) tay(info *stepInfo) {
-	this.Y = this.A
-	this.setZN(this.Y)
+func CPU_tay(info *stepInfo) {
+	CPU_Y = CPU_A
+	CPU_setZN(CPU_Y)
 }
 
 // TSX - Transfer Stack Pointer to X
-func (this *CPU) tsx(info *stepInfo) {
-	this.X = this.SP
-	this.setZN(this.X)
+func CPU_tsx(info *stepInfo) {
+	CPU_X = CPU_SP
+	CPU_setZN(CPU_X)
 }
 
 // TXA - Transfer X to Accumulator
-func (this *CPU) txa(info *stepInfo) {
-	this.A = this.X
-	this.setZN(this.A)
+func CPU_txa(info *stepInfo) {
+	CPU_A = CPU_X
+	CPU_setZN(CPU_A)
 }
 
 // TXS - Transfer X to Stack Pointer
-func (this *CPU) txs(info *stepInfo) {
-	this.SP = this.X
+func CPU_txs(info *stepInfo) {
+	CPU_SP = CPU_X
 }
 
 // TYA - Transfer Y to Accumulator
-func (this *CPU) tya(info *stepInfo) {
-	this.A = this.Y
-	this.setZN(this.A)
+func CPU_tya(info *stepInfo) {
+	CPU_A = CPU_Y
+	CPU_setZN(CPU_A)
 }
 
 // illegal opcodes below
 
-func (this *CPU) ahx(info *stepInfo) {
+func CPU_ahx(info *stepInfo) {
 }
 
-func (this *CPU) alr(info *stepInfo) {
+func CPU_alr(info *stepInfo) {
 }
 
-func (this *CPU) anc(info *stepInfo) {
+func CPU_anc(info *stepInfo) {
 }
 
-func (this *CPU) arr(info *stepInfo) {
+func CPU_arr(info *stepInfo) {
 }
 
-func (this *CPU) axs(info *stepInfo) {
+func CPU_axs(info *stepInfo) {
 }
 
-func (this *CPU) dcp(info *stepInfo) {
+func CPU_dcp(info *stepInfo) {
 }
 
-func (this *CPU) isc(info *stepInfo) {
+func CPU_isc(info *stepInfo) {
 }
 
-func (this *CPU) kil(info *stepInfo) {
+func CPU_kil(info *stepInfo) {
 }
 
-func (this *CPU) las(info *stepInfo) {
+func CPU_las(info *stepInfo) {
 }
 
-func (this *CPU) lax(info *stepInfo) {
+func CPU_lax(info *stepInfo) {
 }
 
-func (this *CPU) rla(info *stepInfo) {
+func CPU_rla(info *stepInfo) {
 }
 
-func (this *CPU) rra(info *stepInfo) {
+func CPU_rra(info *stepInfo) {
 }
 
-func (this *CPU) sax(info *stepInfo) {
+func CPU_sax(info *stepInfo) {
 }
 
-func (this *CPU) shx(info *stepInfo) {
+func CPU_shx(info *stepInfo) {
 }
 
-func (this *CPU) shy(info *stepInfo) {
+func CPU_shy(info *stepInfo) {
 }
 
-func (this *CPU) slo(info *stepInfo) {
+func CPU_slo(info *stepInfo) {
 }
 
-func (this *CPU) sre(info *stepInfo) {
+func CPU_sre(info *stepInfo) {
 }
 
-func (this *CPU) tas(info *stepInfo) {
+func CPU_tas(info *stepInfo) {
 }
 
-func (this *CPU) xaa(info *stepInfo) {
+func CPU_xaa(info *stepInfo) {
 }

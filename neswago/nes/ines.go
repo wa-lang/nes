@@ -29,20 +29,20 @@ func readNESFileHeader(buf []byte, hdr *iNESFileHeader) (int, error) {
 // LoadNESFile reads an iNES file (.nes) and returns a Cartridge on success.
 // http://wiki.nesdev.com/w/index.php/INES
 // http://nesdev.com/NESDoc.pdf (page 28)
-func LoadNESFile(romBytes []byte) (*Cartridge, error) {
+func LoadNESFile(romBytes []byte) error {
 	file := romBytes
 
 	// read file header
 	header := iNESFileHeader{}
 	n, err := readNESFileHeader(file, &header)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	file = file[n:]
 
 	// verify header magic number
 	if header.Magic != iNESFileMagic {
-		return nil, errors_New("invalid .nes file")
+		return errors_New("invalid .nes file")
 	}
 
 	// mapper type
@@ -62,7 +62,7 @@ func LoadNESFile(romBytes []byte) (*Cartridge, error) {
 	if header.Control1&4 == 4 {
 		trainer := make([]byte, 512)
 		if len(file) < len(trainer) {
-			return nil, errors_New("EOF")
+			return errors_New("EOF")
 		}
 		copy(trainer, file)
 		file = file[len(trainer):]
@@ -71,7 +71,7 @@ func LoadNESFile(romBytes []byte) (*Cartridge, error) {
 	// read prg-rom bank(s)
 	prg := make([]byte, int(header.NumPRG)*16384)
 	if len(file) < len(prg) {
-		return nil, errors_New("EOF")
+		return errors_New("EOF")
 	}
 	copy(prg, file)
 	file = file[len(prg):]
@@ -79,7 +79,7 @@ func LoadNESFile(romBytes []byte) (*Cartridge, error) {
 	// read chr-rom bank(s)
 	chr := make([]byte, int(header.NumCHR)*8192)
 	if len(file) < len(chr) {
-		return nil, errors_New("EOF")
+		return errors_New("EOF")
 	}
 	copy(chr, file)
 	file = file[len(chr):]
@@ -89,6 +89,7 @@ func LoadNESFile(romBytes []byte) (*Cartridge, error) {
 		chr = make([]byte, 8192)
 	}
 
+	InitCartridge(prg, chr, mapper, mirror, battery)
 	// success
-	return NewCartridge(prg, chr, mapper, mirror, battery), nil
+	return nil
 }

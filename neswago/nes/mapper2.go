@@ -1,17 +1,16 @@
 package nes
 
 type Mapper2 struct {
-	*Cartridge
 	prgBanks int
 	prgBank1 int
 	prgBank2 int
 }
 
-func NewMapper2(cartridge *Cartridge) Mapper {
-	prgBanks := len(cartridge.PRG) / 0x4000
+func NewMapper2() Mapper {
+	prgBanks := len(Cartridge_PRG) / 0x4000
 	prgBank1 := 0
 	prgBank2 := prgBanks - 1
-	return &Mapper2{cartridge, prgBanks, prgBank1, prgBank2}
+	return &Mapper2{prgBanks, prgBank1, prgBank2}
 }
 
 func (this *Mapper2) Step() {
@@ -20,16 +19,16 @@ func (this *Mapper2) Step() {
 func (this *Mapper2) Read(address uint16) byte {
 	switch {
 	case address < 0x2000:
-		return this.CHR[address]
+		return Cartridge_CHR[address]
 	case address >= 0xC000:
 		index := this.prgBank2*0x4000 + int(address-0xC000)
-		return this.PRG[index]
+		return Cartridge_PRG[index]
 	case address >= 0x8000:
 		index := this.prgBank1*0x4000 + int(address-0x8000)
-		return this.PRG[index]
+		return Cartridge_PRG[index]
 	case address >= 0x6000:
 		index := int(address) - 0x6000
-		return this.SRAM[index]
+		return Cartridge_SRAM[index]
 	default:
 		log_Fatalf("unhandled mapper2 read at address: 0x%04X", address)
 	}
@@ -39,12 +38,12 @@ func (this *Mapper2) Read(address uint16) byte {
 func (this *Mapper2) Write(address uint16, value byte) {
 	switch {
 	case address < 0x2000:
-		this.CHR[address] = value
+		Cartridge_CHR[address] = value
 	case address >= 0x8000:
 		this.prgBank1 = int(value) % this.prgBanks
 	case address >= 0x6000:
 		index := int(address) - 0x6000
-		this.SRAM[index] = value
+		Cartridge_SRAM[index] = value
 	default:
 		log_Fatalf("unhandled mapper2 write at address: 0x%04X", address)
 	}
