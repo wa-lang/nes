@@ -79,21 +79,21 @@ func PPU_Reset() {
 	PPU_writeOAMAddress(0)
 }
 
-func PPU_readPalette(address: u32) => byte {
+func PPU_readPalette(address: int) => byte {
 	if address >= 16 && address%4 == 0 {
 		address -= 16
 	}
 	return PPU_paletteData[address]
 }
 
-func PPU_writePalette(address: u32, value: byte) {
+func PPU_writePalette(address: int, value: byte) {
 	if address >= 16 && address%4 == 0 {
 		address -= 16
 	}
 	PPU_paletteData[address] = value
 }
 
-func PPU_readRegister(address: u32) => byte {
+func PPU_readRegister(address: int) => byte {
 	switch address {
 	case 0x2002:
 		return PPU_readStatus()
@@ -105,7 +105,7 @@ func PPU_readRegister(address: u32) => byte {
 	return 0
 }
 
-func PPU_writeRegister(address: u32, value: byte) {
+func PPU_writeRegister(address: int, value: byte) {
 	PPU_register = value
 	switch address {
 	case 0x2000:
@@ -212,14 +212,14 @@ func PPU_writeAddress(value: byte) {
 }
 
 func PPU_readData() => byte {
-	value := PPUMemory_Read(u32(PPU_v))
+	value := PPUMemory_Read(int(PPU_v))
 
 	if PPU_v%0x4000 < 0x3F00 {
 		buffered := PPU_bufferedData
 		PPU_bufferedData = value
 		value = buffered
 	} else {
-		PPU_bufferedData = PPUMemory_Read(u32(PPU_v - 0x1000))
+		PPU_bufferedData = PPUMemory_Read(int(PPU_v - 0x1000))
 	}
 
 	if PPU_flagIncrement == 0 {
@@ -231,7 +231,7 @@ func PPU_readData() => byte {
 }
 
 func PPU_writeData(value: byte) {
-	PPUMemory_Write(u32(PPU_v), value)
+	PPUMemory_Write(int(PPU_v), value)
 	if PPU_flagIncrement == 0 {
 		PPU_v += 1
 	} else {
@@ -240,7 +240,7 @@ func PPU_writeData(value: byte) {
 }
 
 func PPU_writeDMA(value: byte) {
-	address := uint32(value) << 8
+	address := int(value) << 8
 	for i := 0; i < 256; i++ {
 		PPU_oamData[PPU_oamAddress] = CPUMemory_Read(address)
 		PPU_oamAddress++
@@ -323,13 +323,13 @@ func PPU_clearVerticalBlank() {
 }
 
 func PPU_fetchNameTableByte() {
-	v := u32(PPU_v)
+	v := int(PPU_v)
 	address := 0x2000 | (v & 0x0FFF)
 	PPU_nameTableByte = PPUMemory_Read(address)
 }
 
 func PPU_fetchAttributeTableByte() {
-	v := u32(PPU_v)
+	v := int(PPU_v)
 	address := 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07)
 	shift := ((v >> 4) & 4) | (v & 2)
 	PPU_attributeTableByte = ((PPUMemory_Read(address) >> shift) & 3) << 2
@@ -339,7 +339,7 @@ func PPU_fetchLowTileByte() {
 	fineY := (PPU_v >> 12) & 7
 	table := PPU_flagBackgroundTable
 	tile := PPU_nameTableByte
-	address := 0x1000*u32(table) + u32(tile)*16 + u32(fineY)
+	address := 0x1000*int(table) + int(tile)*16 + int(fineY)
 	PPU_lowTileByte = PPUMemory_Read(address)
 }
 
@@ -347,7 +347,7 @@ func PPU_fetchHighTileByte() {
 	fineY := (PPU_v >> 12) & 7
 	table := PPU_flagBackgroundTable
 	tile := PPU_nameTableByte
-	address := 0x1000*u32(table) + u32(tile)*16 + u32(fineY)
+	address := 0x1000*int(table) + int(tile)*16 + int(fineY)
 	PPU_highTileByte = PPUMemory_Read(address + 8)
 }
 
@@ -426,7 +426,7 @@ func PPU_renderPixel() {
 			color = background
 		}
 	}
-	c := Palette[PPU_readPalette(uint32(color))%64]
+	c := Palette[PPU_readPalette(int(color))%64]
 	PPU_back[y * PPU_Frame_Width + x] = c
 	//PPU_back.SetRGBA(x, y, c)
 	//PPU_back.SetRGBA(x*2+0, y*2+0, c)
@@ -436,15 +436,15 @@ func PPU_renderPixel() {
 }
 
 func PPU_fetchSpritePattern(i, row: int) => uint32 {
-	tile := PPU_oamData[i*4+1]
+	tile := int(PPU_oamData[i*4+1])
 	attributes := PPU_oamData[i*4+2]
-	address: u32
+	address: int
 	if PPU_flagSpriteSize == 0 {
 		if attributes&0x80 == 0x80 {
 			row = 7 - row
 		}
 		table := PPU_flagSpriteTable
-		address = 0x1000*u32(table) + u32(tile)*16 + u32(row)
+		address = 0x1000*int(table) + tile*16 + row
 	} else {
 		if attributes&0x80 == 0x80 {
 			row = 15 - row
@@ -455,7 +455,7 @@ func PPU_fetchSpritePattern(i, row: int) => uint32 {
 			tile++
 			row -= 8
 		}
-		address = 0x1000*u32(table) + u32(tile)*16 + u32(row)
+		address = 0x1000*int(table) + tile*16 + row
 	}
 	a := (attributes & 3) << 2
 	lowTileByte := PPUMemory_Read(address)

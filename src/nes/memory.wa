@@ -1,4 +1,4 @@
-func CPUMemory_Read(address: u32) => byte {
+func CPUMemory_Read(address: int) => byte {
 	switch {
 	case address < 0x2000:
 		return nes_RAM[address%0x0800]
@@ -23,7 +23,7 @@ func CPUMemory_Read(address: u32) => byte {
 	return 0
 }
 
-func CPUMemory_Write(address: u32, value: byte) {
+func CPUMemory_Write(address: int, value: byte) {
 	switch {
 	case address < 0x2000:
 		nes_RAM[address%0x0800] = value
@@ -49,7 +49,7 @@ func CPUMemory_Write(address: u32, value: byte) {
 	}
 }
 
-func PPUMemory_Read(address: u32) => byte {
+func PPUMemory_Read(address: int) => byte {
 	address = address % 0x4000
 	switch {
 	case address < 0x2000:
@@ -65,7 +65,7 @@ func PPUMemory_Read(address: u32) => byte {
 	return 0
 }
 
-func PPUMemory_Write(address: u32, value: byte) {
+func PPUMemory_Write(address: int, value: byte) {
 	address = address % 0x4000
 	switch {
 	case address < 0x2000:
