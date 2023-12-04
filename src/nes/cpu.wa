@@ -274,13 +274,13 @@ func CPU_read16bug(address: uint16) => uint16 {
 }
 
 func CPU_push(value: byte) {
-	CPUMemory_Write(0x100|u32(CPU_SP), value)
+	CPUMemory_Write(0x100|CPU_SP, value)
 	CPU_SP--
 }
 
 func CPU_pull() => byte {
 	CPU_SP++
-	return CPUMemory_Read(0x100 | u32(CPU_SP))
+	return CPUMemory_Read(0x100 | CPU_SP)
 }
 
 func CPU_push16(value: uint16) {
