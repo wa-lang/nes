@@ -151,7 +151,7 @@ global CPU_V: byte
 global CPU_N: byte
 global CPU_interrupt: byte
 global CPU_stall: int
-global CPU_table: [256]func(*stepInfo)
+global CPU_table: [256]func()
 
 func CPU_Init() {
 	CPU_createTable()
@@ -159,7 +159,7 @@ func CPU_Init() {
 }
 
 func CPU_createTable() {
-	CPU_table = [256]func(*stepInfo){
+	CPU_table = [256]func(){
 		CPU_brk, CPU_ora, CPU_kil, CPU_slo, CPU_nop, CPU_ora, CPU_asl, CPU_slo,
 		CPU_php, CPU_ora, CPU_asl, CPU_anc, CPU_nop, CPU_ora, CPU_asl, CPU_slo,
 		CPU_bpl, CPU_ora, CPU_kil, CPU_slo, CPU_nop, CPU_ora, CPU_asl, CPU_slo,
@@ -205,9 +205,9 @@ func pagesDiffer(a, b: uint16) => bool {
 	return a&0xFF00 != b&0xFF00
 }
 
-func CPU_addBranchCycles(info: *stepInfo) {
+func CPU_addBranchCycles() {
 	CPU_Cycles++
-	if pagesDiffer(info.pc, info.address) {
+	if pagesDiffer(opStepInfo.pc, opStepInfo.address) {
 		CPU_Cycles++
 	}
 }
@@ -319,6 +319,8 @@ type stepInfo struct {
 	mode:    byte
 }
 
+global opStepInfo: stepInfo
+
 func CPU_Step() => int {
 	if CPU_stall > 0 {
 		CPU_stall--
@@ -336,45 +338,46 @@ func CPU_Step() => int {
 	CPU_interrupt = interruptNone
 
 	opcode := CPUMemory_Read(CPU_PC)
-	mode := instructionModes[opcode]
 
-	address: uint16
+	opStepInfo.pc = CPU_PC
+	opStepInfo.mode = instructionModes[opcode]
+
 	pageCrossed: bool
-	switch mode {
+	switch opStepInfo.mode {
 	case modeAbsolute:
-		address = CPU_Read16(CPU_PC + 1)
+		opStepInfo.address = CPU_Read16(CPU_PC + 1)
 	case modeAbsoluteX:
-		address = CPU_Read16(CPU_PC+1) + uint16(CPU_X)
-		pageCrossed = pagesDiffer(address-uint16(CPU_X), address)
+		opStepInfo.address = CPU_Read16(CPU_PC+1) + uint16(CPU_X)
+		pageCrossed = pagesDiffer(opStepInfo.address-uint16(CPU_X), opStepInfo.address)
 	case modeAbsoluteY:
-		address = CPU_Read16(CPU_PC+1) + uint16(CPU_Y)
-		pageCrossed = pagesDiffer(address-uint16(CPU_Y), address)
+		opStepInfo.address = CPU_Read16(CPU_PC+1) + uint16(CPU_Y)
+		pageCrossed = pagesDiffer(opStepInfo.address-uint16(CPU_Y), opStepInfo.address)
 	case modeAccumulator:
-		address = 0
+		opStepInfo.address = 0
 	case modeImmediate:
-		address = CPU_PC + 1
+		opStepInfo.address = CPU_PC + 1
 	case modeImplied:
-		address = 0
+		opStepInfo.address = 0
 	case modeIndexedIndirect:
-		address = CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1) + CPU_X))
+		opStepInfo.address = CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1) + CPU_X))
 	case modeIndirect:
-		address = CPU_read16bug(CPU_Read16(CPU_PC + 1))
+		opStepInfo.address = CPU_read16bug(CPU_Read16(CPU_PC + 1))
 	case modeIndirectIndexed:
-		address = CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1))) + uint16(CPU_Y)
-		pageCrossed = pagesDiffer(address-uint16(CPU_Y), address)
+		opStepInfo.address = CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1))) + uint16(CPU_Y)
+		pageCrossed = pagesDiffer(opStepInfo.address-uint16(CPU_Y), opStepInfo.address)
 	case modeRelative:
 		offset := uint16(CPUMemory_Read(CPU_PC + 1))
 		if offset < 0x80 {
-			address = CPU_PC + 2 + offset
+			opStepInfo.address = CPU_PC + 2 + offset
 		} else {
-			address = CPU_PC + 2 + offset - 0x100
+			opStepInfo.address = CPU_PC + 2 + offset - 0x100
 		}
 	case modeZeroPage:
-		address = uint16(CPUMemory_Read(CPU_PC + 1))
+		opStepInfo.address = uint16(CPUMemory_Read(CPU_PC + 1))
 	case modeZeroPageX:
-		address = uint16(CPUMemory_Read(CPU_PC+1)+CPU_X) & 0xff
+		opStepInfo.address = uint16(CPUMemory_Read(CPU_PC+1)+CPU_X) & 0xff
 	case modeZeroPageY:
-		address = uint16(CPUMemory_Read(CPU_PC+1)+CPU_Y) & 0xff
+		opStepInfo.address = uint16(CPUMemory_Read(CPU_PC+1)+CPU_Y) & 0xff
 	}
 
 	CPU_PC += uint16(instructionSizes[opcode])
@@ -382,16 +385,15 @@ func CPU_Step() => int {
 	if pageCrossed {
 		CPU_Cycles += uint64(instructionPageCycles[opcode])
 	}
-	info := &stepInfo{address, CPU_PC, mode}
 
-	CPU_table[opcode](info)
+	CPU_table[opcode]()
 
 	return int(CPU_Cycles - cycles)
 }
 
 func CPU_nmi() {
 	CPU_push16(CPU_PC)
-	CPU_php(nil)
+	CPU_php()
 	CPU_PC = CPU_Read16(0xFFFA)
 	CPU_I = 1
 	CPU_Cycles += 7
@@ -399,15 +401,15 @@ func CPU_nmi() {
 
 func CPU_irq() {
 	CPU_push16(CPU_PC)
-	CPU_php(nil)
+	CPU_php()
 	CPU_PC = CPU_Read16(0xFFFE)
 	CPU_I = 1
 	CPU_Cycles += 7
 }
 
-func CPU_adc(info: *stepInfo) {
+func CPU_adc() {
 	a := CPU_A
-	b := CPUMemory_Read(info.address)
+	b := CPUMemory_Read(opStepInfo.address)
 	c := CPU_C
 	CPU_A = a + b + c
 	CPU_setZN(CPU_A)
@@ -423,270 +425,270 @@ func CPU_adc(info: *stepInfo) {
 	}
 }
 
-func CPU_and(info: *stepInfo) {
-	CPU_A = CPU_A & CPUMemory_Read(info.address)
+func CPU_and() {
+	CPU_A = CPU_A & CPUMemory_Read(opStepInfo.address)
 	CPU_setZN(CPU_A)
 }
 
-func CPU_asl(info: *stepInfo) {
-	if info.mode == modeAccumulator {
+func CPU_asl() {
+	if opStepInfo.mode == modeAccumulator {
 		CPU_C = (CPU_A >> 7) & 1
 		CPU_A <<= 1
 		CPU_setZN(CPU_A)
 	} else {
-		value := CPUMemory_Read(info.address)
+		value := CPUMemory_Read(opStepInfo.address)
 		CPU_C = (value >> 7) & 1
 		value <<= 1
-		CPUMemory_Write(info.address, value)
+		CPUMemory_Write(opStepInfo.address, value)
 		CPU_setZN(value)
 	}
 }
 
-func CPU_bcc(info: *stepInfo) {
+func CPU_bcc() {
 	if CPU_C == 0 {
-		CPU_PC = info.address
-		CPU_addBranchCycles(info)
+		CPU_PC = opStepInfo.address
+		CPU_addBranchCycles()
 	}
 }
 
-func CPU_bcs(info: *stepInfo) {
+func CPU_bcs() {
 	if CPU_C != 0 {
-		CPU_PC = info.address
-		CPU_addBranchCycles(info)
+		CPU_PC = opStepInfo.address
+		CPU_addBranchCycles()
 	}
 }
 
-func CPU_beq(info: *stepInfo) {
+func CPU_beq() {
 	if CPU_Z != 0 {
-		CPU_PC = info.address
-		CPU_addBranchCycles(info)
+		CPU_PC = opStepInfo.address
+		CPU_addBranchCycles()
 	}
 }
 
-func CPU_bit(info: *stepInfo) {
-	value := CPUMemory_Read(info.address)
+func CPU_bit() {
+	value := CPUMemory_Read(opStepInfo.address)
 	CPU_V = (value >> 6) & 1
 	CPU_setZ(value & CPU_A)
 	CPU_setN(value)
 }
 
-func CPU_bmi(info: *stepInfo) {
+func CPU_bmi() {
 	if CPU_N != 0 {
-		CPU_PC = info.address
-		CPU_addBranchCycles(info)
+		CPU_PC = opStepInfo.address
+		CPU_addBranchCycles()
 	}
 }
 
-func CPU_bne(info: *stepInfo) {
+func CPU_bne() {
 	if CPU_Z == 0 {
-		CPU_PC = info.address
-		CPU_addBranchCycles(info)
+		CPU_PC = opStepInfo.address
+		CPU_addBranchCycles()
 	}
 }
 
-func CPU_bpl(info: *stepInfo) {
+func CPU_bpl() {
 	if CPU_N == 0 {
-		CPU_PC = info.address
-		CPU_addBranchCycles(info)
+		CPU_PC = opStepInfo.address
+		CPU_addBranchCycles()
 	}
 }
 
-func CPU_brk(info: *stepInfo) {
+func CPU_brk() {
 	CPU_push16(CPU_PC)
-	CPU_php(info)
-	CPU_sei(info)
+	CPU_php()
+	CPU_sei()
 	CPU_PC = CPU_Read16(0xFFFE)
 }
 
-func CPU_bvc(info: *stepInfo) {
+func CPU_bvc() {
 	if CPU_V == 0 {
-		CPU_PC = info.address
-		CPU_addBranchCycles(info)
+		CPU_PC = opStepInfo.address
+		CPU_addBranchCycles()
 	}
 }
 
-func CPU_bvs(info: *stepInfo) {
+func CPU_bvs() {
 	if CPU_V != 0 {
-		CPU_PC = info.address
-		CPU_addBranchCycles(info)
+		CPU_PC = opStepInfo.address
+		CPU_addBranchCycles()
 	}
 }
 
-func CPU_clc(info: *stepInfo) {
+func CPU_clc() {
 	CPU_C = 0
 }
 
-func CPU_cld(info: *stepInfo) {
+func CPU_cld() {
 	CPU_D = 0
 }
 
-func CPU_cli(info: *stepInfo) {
+func CPU_cli() {
 	CPU_I = 0
 }
 
-func CPU_clv(info: *stepInfo) {
+func CPU_clv() {
 	CPU_V = 0
 }
 
-func CPU_cmp(info: *stepInfo) {
-	value := CPUMemory_Read(info.address)
+func CPU_cmp() {
+	value := CPUMemory_Read(opStepInfo.address)
 	CPU_compare(CPU_A, value)
 }
 
-func CPU_cpx(info: *stepInfo) {
-	value := CPUMemory_Read(info.address)
+func CPU_cpx() {
+	value := CPUMemory_Read(opStepInfo.address)
 	CPU_compare(CPU_X, value)
 }
 
-func CPU_cpy(info: *stepInfo) {
-	value := CPUMemory_Read(info.address)
+func CPU_cpy() {
+	value := CPUMemory_Read(opStepInfo.address)
 	CPU_compare(CPU_Y, value)
 }
 
-func CPU_dec(info: *stepInfo) {
-	value := CPUMemory_Read(info.address) - 1
-	CPUMemory_Write(info.address, value)
+func CPU_dec() {
+	value := CPUMemory_Read(opStepInfo.address) - 1
+	CPUMemory_Write(opStepInfo.address, value)
 	CPU_setZN(value)
 }
 
-func CPU_dex(info: *stepInfo) {
+func CPU_dex() {
 	CPU_X--
 	CPU_setZN(CPU_X)
 }
 
-func CPU_dey(info: *stepInfo) {
+func CPU_dey() {
 	CPU_Y--
 	CPU_setZN(CPU_Y)
 }
 
-func CPU_eor(info: *stepInfo) {
-	CPU_A = CPU_A ^ CPUMemory_Read(info.address)
+func CPU_eor() {
+	CPU_A = CPU_A ^ CPUMemory_Read(opStepInfo.address)
 	CPU_setZN(CPU_A)
 }
 
-func CPU_inc(info: *stepInfo) {
-	value := CPUMemory_Read(info.address) + 1
-	CPUMemory_Write(info.address, value)
+func CPU_inc() {
+	value := CPUMemory_Read(opStepInfo.address) + 1
+	CPUMemory_Write(opStepInfo.address, value)
 	CPU_setZN(value)
 }
 
-func CPU_inx(info: *stepInfo) {
+func CPU_inx() {
 	CPU_X++
 	CPU_setZN(CPU_X)
 }
 
-func CPU_iny(info: *stepInfo) {
+func CPU_iny() {
 	CPU_Y++
 	CPU_setZN(CPU_Y)
 }
 
-func CPU_jmp(info: *stepInfo) {
-	CPU_PC = info.address
+func CPU_jmp() {
+	CPU_PC = opStepInfo.address
 }
 
-func CPU_jsr(info: *stepInfo) {
+func CPU_jsr() {
 	CPU_push16(CPU_PC - 1)
-	CPU_PC = info.address
+	CPU_PC = opStepInfo.address
 }
 
-func CPU_lda(info: *stepInfo) {
-	CPU_A = CPUMemory_Read(info.address)
+func CPU_lda() {
+	CPU_A = CPUMemory_Read(opStepInfo.address)
 	CPU_setZN(CPU_A)
 }
 
-func CPU_ldx(info: *stepInfo) {
-	CPU_X = CPUMemory_Read(info.address)
+func CPU_ldx() {
+	CPU_X = CPUMemory_Read(opStepInfo.address)
 	CPU_setZN(CPU_X)
 }
 
-func CPU_ldy(info: *stepInfo) {
-	CPU_Y = CPUMemory_Read(info.address)
+func CPU_ldy() {
+	CPU_Y = CPUMemory_Read(opStepInfo.address)
 	CPU_setZN(CPU_Y)
 }
 
-func CPU_lsr(info: *stepInfo) {
-	if info.mode == modeAccumulator {
+func CPU_lsr() {
+	if opStepInfo.mode == modeAccumulator {
 		CPU_C = CPU_A & 1
 		CPU_A >>= 1
 		CPU_setZN(CPU_A)
 	} else {
-		value := CPUMemory_Read(info.address)
+		value := CPUMemory_Read(opStepInfo.address)
 		CPU_C = value & 1
 		value >>= 1
-		CPUMemory_Write(info.address, value)
+		CPUMemory_Write(opStepInfo.address, value)
 		CPU_setZN(value)
 	}
 }
 
-func CPU_nop(info: *stepInfo) {
+func CPU_nop() {
 }
 
-func CPU_ora(info: *stepInfo) {
-	CPU_A = CPU_A | CPUMemory_Read(info.address)
+func CPU_ora() {
+	CPU_A = CPU_A | CPUMemory_Read(opStepInfo.address)
 	CPU_setZN(CPU_A)
 }
 
-func CPU_pha(info: *stepInfo) {
+func CPU_pha() {
 	CPU_push(CPU_A)
 }
 
-func CPU_php(info: *stepInfo) {
+func CPU_php() {
 	CPU_push(CPU_Flags() | 0x10)
 }
 
-func CPU_pla(info: *stepInfo) {
+func CPU_pla() {
 	CPU_A = CPU_pull()
 	CPU_setZN(CPU_A)
 }
 
-func CPU_plp(info: *stepInfo) {
+func CPU_plp() {
 	CPU_SetFlags(CPU_pull()&0xEF | 0x20)
 }
 
-func CPU_rol(info: *stepInfo) {
-	if info.mode == modeAccumulator {
+func CPU_rol() {
+	if opStepInfo.mode == modeAccumulator {
 		c := CPU_C
 		CPU_C = (CPU_A >> 7) & 1
 		CPU_A = (CPU_A << 1) | c
 		CPU_setZN(CPU_A)
 	} else {
 		c := CPU_C
-		value := CPUMemory_Read(info.address)
+		value := CPUMemory_Read(opStepInfo.address)
 		CPU_C = (value >> 7) & 1
 		value = (value << 1) | c
-		CPUMemory_Write(info.address, value)
+		CPUMemory_Write(opStepInfo.address, value)
 		CPU_setZN(value)
 	}
 }
 
-func CPU_ror(info: *stepInfo) {
-	if info.mode == modeAccumulator {
+func CPU_ror() {
+	if opStepInfo.mode == modeAccumulator {
 		c := CPU_C
 		CPU_C = CPU_A & 1
 		CPU_A = (CPU_A >> 1) | (c << 7)
 		CPU_setZN(CPU_A)
 	} else {
 		c := CPU_C
-		value := CPUMemory_Read(info.address)
+		value := CPUMemory_Read(opStepInfo.address)
 		CPU_C = value & 1
 		value = (value >> 1) | (c << 7)
-		CPUMemory_Write(info.address, value)
+		CPUMemory_Write(opStepInfo.address, value)
 		CPU_setZN(value)
 	}
 }
 
-func CPU_rti(info: *stepInfo) {
+func CPU_rti() {
 	CPU_SetFlags(CPU_pull()&0xEF | 0x20)
 	CPU_PC = CPU_pull16()
 }
 
-func CPU_rts(info: *stepInfo) {
+func CPU_rts() {
 	CPU_PC = CPU_pull16() + 1
 }
 
-func CPU_sbc(info: *stepInfo) {
+func CPU_sbc() {
 	a := CPU_A
-	b := CPUMemory_Read(info.address)
+	b := CPUMemory_Read(opStepInfo.address)
 	c := CPU_C
 	CPU_A = a - b - (1 - c)
 	CPU_setZN(CPU_A)
@@ -702,113 +704,113 @@ func CPU_sbc(info: *stepInfo) {
 	}
 }
 
-func CPU_sec(info: *stepInfo) {
+func CPU_sec() {
 	CPU_C = 1
 }
 
-func CPU_sed(info: *stepInfo) {
+func CPU_sed() {
 	CPU_D = 1
 }
 
-func CPU_sei(info: *stepInfo) {
+func CPU_sei() {
 	CPU_I = 1
 }
 
-func CPU_sta(info: *stepInfo) {
-	CPUMemory_Write(info.address, CPU_A)
+func CPU_sta() {
+	CPUMemory_Write(opStepInfo.address, CPU_A)
 }
 
-func CPU_stx(info: *stepInfo) {
-	CPUMemory_Write(info.address, CPU_X)
+func CPU_stx() {
+	CPUMemory_Write(opStepInfo.address, CPU_X)
 }
 
-func CPU_sty(info: *stepInfo) {
-	CPUMemory_Write(info.address, CPU_Y)
+func CPU_sty() {
+	CPUMemory_Write(opStepInfo.address, CPU_Y)
 }
 
-func CPU_tax(info: *stepInfo) {
+func CPU_tax() {
 	CPU_X = CPU_A
 	CPU_setZN(CPU_X)
 }
 
-func CPU_tay(info: *stepInfo) {
+func CPU_tay() {
 	CPU_Y = CPU_A
 	CPU_setZN(CPU_Y)
 }
 
-func CPU_tsx(info: *stepInfo) {
+func CPU_tsx() {
 	CPU_X = CPU_SP
 	CPU_setZN(CPU_X)
 }
 
-func CPU_txa(info: *stepInfo) {
+func CPU_txa() {
 	CPU_A = CPU_X
 	CPU_setZN(CPU_A)
 }
 
-func CPU_txs(info: *stepInfo) {
+func CPU_txs() {
 	CPU_SP = CPU_X
 }
 
-func CPU_tya(info: *stepInfo) {
+func CPU_tya() {
 	CPU_A = CPU_Y
 	CPU_setZN(CPU_A)
 }
 
-func CPU_ahx(info: *stepInfo) {
+func CPU_ahx() {
 }
 
-func CPU_alr(info: *stepInfo) {
+func CPU_alr() {
 }
 
-func CPU_anc(info: *stepInfo) {
+func CPU_anc() {
 }
 
-func CPU_arr(info: *stepInfo) {
+func CPU_arr() {
 }
 
-func CPU_axs(info: *stepInfo) {
+func CPU_axs() {
 }
 
-func CPU_dcp(info: *stepInfo) {
+func CPU_dcp() {
 }
 
-func CPU_isc(info: *stepInfo) {
+func CPU_isc() {
 }
 
-func CPU_kil(info: *stepInfo) {
+func CPU_kil() {
 }
 
-func CPU_las(info: *stepInfo) {
+func CPU_las() {
 }
 
-func CPU_lax(info: *stepInfo) {
+func CPU_lax() {
 }
 
-func CPU_rla(info: *stepInfo) {
+func CPU_rla() {
 }
 
-func CPU_rra(info: *stepInfo) {
+func CPU_rra() {
 }
 
-func CPU_sax(info: *stepInfo) {
+func CPU_sax() {
 }
 
-func CPU_shx(info: *stepInfo) {
+func CPU_shx() {
 }
 
-func CPU_shy(info: *stepInfo) {
+func CPU_shy() {
 }
 
-func CPU_slo(info: *stepInfo) {
+func CPU_slo() {
 }
 
-func CPU_sre(info: *stepInfo) {
+func CPU_sre() {
 }
 
-func CPU_tas(info: *stepInfo) {
+func CPU_tas() {
 }
 
-func CPU_xaa(info: *stepInfo) {
+func CPU_xaa() {
 }
 

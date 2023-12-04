@@ -1,16 +1,18 @@
-import (
-	"image"
-)
 
 global PPU_Cycle: int
 global PPU_ScanLine: int
 global PPU_Frame: uint64
 global PPU_paletteData: [32]byte
 
+const (
+	PPU_Frame_Width = 256
+	PPU_Frame_Height = 240
+)
+
 global PPU_nameTableData: [2048]byte
 global PPU_oamData: [256]byte
-global PPU_front: *image.RGBA
-global PPU_back: *image.RGBA
+global PPU_front: []u32
+global PPU_back: []u32
 
 global PPU_v: uint16
 global PPU_t: uint16
@@ -61,8 +63,8 @@ global PPU_oamAddress: byte
 global PPU_bufferedData: byte
 
 func PPU_initNesPPU() {
-	PPU_front = image.NewRGBA(image.Rect(0, 0, 256, 240))
-	PPU_back = image.NewRGBA(image.Rect(0, 0, 256, 240))
+	PPU_front = make([]u32, PPU_Frame_Width * PPU_Frame_Height)
+	PPU_back = make([]u32, PPU_Frame_Width * PPU_Frame_Height)
 	//PPU_front = image.NewRGBA(image.Rect(0, 0, 256 * 3, 240 * 3))
 	//PPU_back = image.NewRGBA(image.Rect(0, 0, 256 * 3, 240 * 3))
 	PPU_Reset()
@@ -425,7 +427,8 @@ func PPU_renderPixel() {
 		}
 	}
 	c := Palette[PPU_readPalette(uint16(color))%64]
-	PPU_back.SetRGBA(x, y, c)
+	PPU_back[y * PPU_Frame_Width + x] = c
+	//PPU_back.SetRGBA(x, y, c)
 	//PPU_back.SetRGBA(x*2+0, y*2+0, c)
 	//PPU_back.SetRGBA(x*2+1, y*2+0, c)
 	//PPU_back.SetRGBA(x*2+0, y*2+1, c)

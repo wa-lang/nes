@@ -1,6 +1,3 @@
-import (
-	"image"
-)
 
 global Consol_Mapper: Mapper
 global nes_RAM: []byte
@@ -59,7 +56,7 @@ func Console_StepSeconds(seconds: float64) {
 	}
 }
 
-func Console_Buffer() => *image.RGBA {
+func Console_Buffer() => []u32 {
 	return PPU_front
 }
 
