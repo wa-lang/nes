@@ -30,6 +30,7 @@
   let btnDown = false;
   let btnLeft = false;
   let btnRight = false;
+  let btnReset = false;
 
   function clearAllKeys() {
     btnA = false;
@@ -40,6 +41,7 @@
     btnDown = false;
     btnLeft = false;
     btnRight = false;
+    btnReset = false;
   }
 
   window.onload = () => { 
@@ -57,6 +59,10 @@
       //}
 
       switch(event.keyCode) {
+      case 82: // R
+        btnReset = true;
+        break;
+
       case 13: // enter/space
       case 32:
         btnStart = true;
@@ -115,6 +121,11 @@
         // 时间间隔
         let dt = timeStamp - preTimeStamp;
         // console.log(`nes: timeStamp = ${timeStamp}`);
+
+        if(btnReset) {
+          btnReset = false;
+          app.NES_Reset();
+        }
 
         // 执行
         //console.log("key: btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight")

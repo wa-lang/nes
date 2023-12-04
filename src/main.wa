@@ -98,3 +98,8 @@ func NES_StepSeconds(dt: f64) {
 
 	nes_ctx.PutImageData(raw(nes.Console_Buffer()), 0, 0, 0, 0, 256, 240)
 }
+
+// 重置游戏
+func NES_Reset {
+	nes.Console_Reset()
+}
