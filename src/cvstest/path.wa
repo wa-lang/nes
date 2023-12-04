@@ -1,0 +1,61 @@
+import "canvas"
+import "math"
+
+func TestPath(ctx: canvas.Context2D) {
+	// ctx.BeginPath()
+	// ctx.MoveTo(20, 20)
+	// ctx.LineTo(20, 100)
+	// ctx.LineTo(70, 100)
+	// ctx.Stroke()
+
+	// Clip
+	// ctx.Rect(50, 20, 200, 120)
+	// ctx.Stroke()
+	// ctx.Clip()
+	// ctx.SetFillStyle("red")
+	// ctx.FillRect(0, 0, 150, 100)
+
+	// QuadraticCurveTo
+	// ctx.BeginPath()
+	// ctx.MoveTo(20, 20)
+	// ctx.QuadraticCurveTo(20, 100, 200, 20)
+	// ctx.Stroke()
+
+	// BezierCurveTo
+	// ctx.BeginPath()
+	// ctx.MoveTo(20, 20)
+	// ctx.BezierCurveTo(20, 100, 200, 100, 200, 20)
+	// ctx.Stroke()
+
+	// Arc
+	// type ArcParams struct {
+	// 	x, y, radius, startAngle, endAngle: f64
+	// 	counterclockwise:                   bool
+	// }
+
+	ctx.BeginPath()
+	ctx.Arc(50, 50, 25, 0, math.Pi/2)
+	ctx.LineTo(50, 50)
+	ctx.ClosePath()
+	ctx.Stroke()
+	ctx.BeginPath()
+	ctx.ArcWithDirection(200, 50, 25, 0, math.Pi/2, true)
+	ctx.LineTo(200, 50)
+	ctx.ClosePath()
+	ctx.Stroke()
+
+	// ArcTo
+	// ctx.MoveTo(20, 20)
+	// ctx.LineTo(100, 20)
+	// ctx.ArcTo(150, 20, 150, 70, 50)
+	// ctx.LineTo(150, 120)
+	// ctx.Stroke()
+
+	// IsPointInPath
+	// ctx.Rect(20, 20, 150, 100)
+	// isInPath := ctx.IsPointInPath(20, 50)
+	// if isInPath {
+	// 	ctx.Stroke()
+	// }
+
+}

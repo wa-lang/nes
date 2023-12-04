@@ -1,0 +1,29 @@
+import "canvas"
+
+func TestLineStyle(ctx: canvas.Context2D) {
+	// LineCap
+	// ctx.BeginPath()
+	// ctx.SetLineWidth(10)
+	// ctx.SetLineCap("round")
+	// ctx.MoveTo(20, 40)
+	// ctx.LineTo(200, 40)
+	// ctx.Stroke()
+
+	// LineJoin
+	// ctx.BeginPath()
+	// ctx.SetLineWidth(10)
+	// ctx.SetLineJoin("round")
+	// ctx.MoveTo(20, 20)
+	// ctx.LineTo(100, 50)
+	// ctx.LineTo(20, 100)
+	// ctx.Stroke()
+
+	// MiterLimit
+	ctx.SetLineWidth(10)
+	ctx.SetLineJoin("miter")
+	ctx.SetMiterLimit(5)
+	ctx.MoveTo(20, 20)
+	ctx.LineTo(50, 27)
+	ctx.LineTo(20, 34)
+	ctx.Stroke()
+}

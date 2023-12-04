@@ -1,0 +1,25 @@
+import "canvas"
+
+func TestSynthesis(ctx: canvas.Context2D) {
+	// GlobalAlpha
+	// ctx.SetFillStyle("red")
+	// ctx.FillRect(20, 20, 75, 50)
+	// ctx.SetGlobalAlpha(0.2)
+	// ctx.SetFillStyle("blue")
+	// ctx.FillRect(50, 50, 75, 50)
+	// ctx.SetFillStyle("green")
+	// ctx.FillRect(80, 80, 75, 50)
+
+	// GlobalCompositeOperation
+	ctx.SetFillStyle("red")
+	ctx.FillRect(20, 20, 75, 50)
+	ctx.SetGlobalCompositeOperation("source-over")
+	ctx.SetFillStyle("blue")
+	ctx.FillRect(50, 50, 75, 50)
+
+	ctx.SetFillStyle("red")
+	ctx.FillRect(150, 20, 75, 50)
+	ctx.SetGlobalCompositeOperation("destination-over")
+	ctx.SetFillStyle("blue")
+	ctx.FillRect(180, 50, 75, 50)
+}

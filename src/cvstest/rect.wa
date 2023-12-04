@@ -1,0 +1,19 @@
+import "canvas"
+
+func TestRect(ctx: canvas.Context2D) {
+	// Rect
+	// ctx.Rect(20, 20, 150, 100)
+	// ctx.Stroke()
+	// TODO: 更多测试实例
+
+	// FillRect
+	// ctx.FillRect(20, 20, 150, 100)
+
+	// StrokeRect
+	// ctx.StrokeRect(20, 20, 150, 100)
+
+	// ClearRect
+	ctx.SetFillStyle("red")
+	ctx.FillRect(0, 0, 300, 150)
+	ctx.ClearRect(20, 20, 100, 50)
+}

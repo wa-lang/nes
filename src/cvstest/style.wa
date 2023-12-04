@@ -1,0 +1,38 @@
+import "canvas"
+
+func TestColorStyleShadow(ctx: canvas.Context2D) {
+	// FillStyle
+	// ctx.SetFillStyle("red")
+	// ctx.FillRect(20, 20, 150, 100)
+
+	// StrokeStyle
+	// ctx.SetStrokeStyle("red")
+	// ctx.StrokeRect(20, 20, 150, 100)
+
+	// ShadowColor
+	// ctx.SetShadowBlur(20)
+	// ctx.SetShadowColor("black")
+	// ctx.SetFillStyle("red")
+	// ctx.FillRect(20, 20, 100, 80)
+
+	// ShadowOffsetX
+	// ctx.SetShadowBlur(10)
+	// ctx.SetShadowOffsetX(20)
+	// ctx.SetShadowColor("black")
+	// ctx.SetFillStyle("red")
+	// ctx.FillRect(20, 20, 100, 80)
+
+	// ShadowOffsetY
+	ctx.SetShadowBlur(10)
+	ctx.SetShadowOffsetY(20)
+	ctx.SetShadowColor("black")
+	ctx.SetFillStyle("red")
+	ctx.FillRect(20, 20, 100, 80)
+
+	// CreateLinearGradient: TODO
+	// grd := ctx.CreateLinearGradient(0, 0, 170, 0)
+	// grd.AddColorStop(0, "black")
+	// grd.AddColorStop(1, "white")
+	// ctx.SetFillStyle(grd)
+	// ctx.FillRect(20, 20, 150, 100)
+}
