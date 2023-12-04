@@ -135,22 +135,54 @@ global instructionNames = [256]string{
 	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC",
 }
 
+#wa:linkname nes.CPU_Cycles
 global CPU_Cycles: u64
+
+#wa:linkname nes.CPU_PC
 global CPU_PC: u32
+
+#wa:linkname nes.CPU_SP
 global CPU_SP: u32
+
+#wa:linkname nes.CPU_A
 global CPU_A: byte
+
+#wa:linkname nes.CPU_X
 global CPU_X: byte
+
+#wa:linkname nes.CPU_Y
 global CPU_Y: byte
+
+#wa:linkname nes.CPU_C
 global CPU_C: byte
+
+#wa:linkname nes.CPU_Z
 global CPU_Z: byte
+
+#wa:linkname nes.CPU_I
 global CPU_I: byte
+
+#wa:linkname nes.CPU_D
 global CPU_D: byte
+
+#wa:linkname nes.CPU_B
 global CPU_B: byte
+
+#wa:linkname nes.CPU_U
 global CPU_U: byte
+
+#wa:linkname nes.CPU_V
 global CPU_V: byte
+
+#wa:linkname nes.CPU_N
 global CPU_N: byte
+
+#wa:linkname nes.CPU_interrupt
 global CPU_interrupt: u32
+
+#wa:linkname nes.CPU_stall
 global CPU_stall: int
+
 global CPU_table: [256]func()
 
 func CPU_Init() {
