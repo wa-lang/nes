@@ -82,5 +82,5 @@ func NES_StepSeconds(dt: f64) {
 	//println("NES_StepSeconds console.StepSeconds ok")
 	nes.Console_StepFrame()
 
-	nes_ctx.PutImageData(0, 0, 256, 240, raw(nes.Console_Buffer().Pix))
+	nes_ctx.PutImageData(0, 0, 256, 240, raw(nes.Console_Buffer()))
 }
