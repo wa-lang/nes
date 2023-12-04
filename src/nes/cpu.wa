@@ -24,7 +24,7 @@ const (
 	modeZeroPageY
 )
 
-global instructionModes = [256]byte{
+global instructionModes = [256]u32{
 	6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
 	1, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
@@ -43,7 +43,7 @@ global instructionModes = [256]byte{
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
 }
 
-global instructionSizes = [256]byte{
+global instructionSizes = [256]u32{
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
 	3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
@@ -62,7 +62,7 @@ global instructionSizes = [256]byte{
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
 }
 
-global instructionCycles = [256]byte{
+global instructionCycles = [256]u64{
 	7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
 	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
@@ -81,7 +81,7 @@ global instructionCycles = [256]byte{
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
 }
 
-global instructionPageCycles = [256]byte{
+global instructionPageCycles = [256]u64{
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -135,9 +135,9 @@ global instructionNames = [256]string{
 	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC",
 }
 
-global CPU_Cycles: uint64
-global CPU_PC: uint16
-global CPU_SP: byte
+global CPU_Cycles: u64
+global CPU_PC: u32
+global CPU_SP: u32
 global CPU_A: byte
 global CPU_X: byte
 global CPU_Y: byte
@@ -149,7 +149,7 @@ global CPU_B: byte
 global CPU_U: byte
 global CPU_V: byte
 global CPU_N: byte
-global CPU_interrupt: byte
+global CPU_interrupt: u32
 global CPU_stall: int
 global CPU_table: [256]func()
 
@@ -195,19 +195,25 @@ func CPU_createTable() {
 	}
 }
 
+global opStepInfo: struct {
+	address: u32
+	pc:      u32
+	mode:    u32
+}
+
 func CPU_Reset() {
-	CPU_PC = CPU_Read16(0xFFFC)
+	CPU_PC = u32(CPU_Read16(0xFFFC))
 	CPU_SP = 0xFD
 	CPU_SetFlags(0x24)
 }
 
-func pagesDiffer(a, b: uint16) => bool {
+func pagesDiffer(a, b: u32) => bool {
 	return a&0xFF00 != b&0xFF00
 }
 
 func CPU_addBranchCycles() {
 	CPU_Cycles++
-	if pagesDiffer(opStepInfo.pc, opStepInfo.address) {
+	if pagesDiffer(u32(opStepInfo.pc), opStepInfo.address) {
 		CPU_Cycles++
 	}
 }
@@ -221,28 +227,28 @@ func CPU_compare(a, b: byte) {
 	}
 }
 
-func CPU_Read16(address: uint16) => uint16 {
+func CPU_Read16(address: u32) => uint16 {
 	lo := uint16(CPUMemory_Read(address))
 	hi := uint16(CPUMemory_Read(address + 1))
 	return hi<<8 | lo
 }
 
 func CPU_read16bug(address: uint16) => uint16 {
-	a := address
-	b := (a & 0xFF00) | uint16(byte(a)+1)
+	a := u32(address)
+	b := (a & 0xFF00) | u32(byte(a)+1)
 	lo := CPUMemory_Read(a)
 	hi := CPUMemory_Read(b)
 	return uint16(hi)<<8 | uint16(lo)
 }
 
 func CPU_push(value: byte) {
-	CPUMemory_Write(0x100|uint16(CPU_SP), value)
+	CPUMemory_Write(0x100|u32(CPU_SP), value)
 	CPU_SP--
 }
 
 func CPU_pull() => byte {
 	CPU_SP++
-	return CPUMemory_Read(0x100 | uint16(CPU_SP))
+	return CPUMemory_Read(0x100 | u32(CPU_SP))
 }
 
 func CPU_push16(value: uint16) {
@@ -313,14 +319,6 @@ func CPU_triggerIRQ() {
 	}
 }
 
-type stepInfo struct {
-	address: uint16
-	pc:      uint16
-	mode:    byte
-}
-
-global opStepInfo: stepInfo
-
 func CPU_Step() => int {
 	if CPU_stall > 0 {
 		CPU_stall--
@@ -345,13 +343,13 @@ func CPU_Step() => int {
 	pageCrossed: bool
 	switch opStepInfo.mode {
 	case modeAbsolute:
-		opStepInfo.address = CPU_Read16(CPU_PC + 1)
+		opStepInfo.address = u32(CPU_Read16(CPU_PC + 1))
 	case modeAbsoluteX:
-		opStepInfo.address = CPU_Read16(CPU_PC+1) + uint16(CPU_X)
-		pageCrossed = pagesDiffer(opStepInfo.address-uint16(CPU_X), opStepInfo.address)
+		opStepInfo.address = u32(CPU_Read16(CPU_PC+1) + u16(CPU_X))
+		pageCrossed = pagesDiffer(opStepInfo.address-u32(CPU_X), opStepInfo.address)
 	case modeAbsoluteY:
-		opStepInfo.address = CPU_Read16(CPU_PC+1) + uint16(CPU_Y)
-		pageCrossed = pagesDiffer(opStepInfo.address-uint16(CPU_Y), opStepInfo.address)
+		opStepInfo.address = u32(CPU_Read16(CPU_PC+1) + uint16(CPU_Y))
+		pageCrossed = pagesDiffer(opStepInfo.address-u32(CPU_Y), opStepInfo.address)
 	case modeAccumulator:
 		opStepInfo.address = 0
 	case modeImmediate:
@@ -359,31 +357,31 @@ func CPU_Step() => int {
 	case modeImplied:
 		opStepInfo.address = 0
 	case modeIndexedIndirect:
-		opStepInfo.address = CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1) + CPU_X))
+		opStepInfo.address = u32(CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1) + CPU_X)))
 	case modeIndirect:
-		opStepInfo.address = CPU_read16bug(CPU_Read16(CPU_PC + 1))
+		opStepInfo.address = u32(CPU_read16bug(CPU_Read16(CPU_PC + 1)))
 	case modeIndirectIndexed:
-		opStepInfo.address = CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1))) + uint16(CPU_Y)
-		pageCrossed = pagesDiffer(opStepInfo.address-uint16(CPU_Y), opStepInfo.address)
+		opStepInfo.address = u32(CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1))) + uint16(CPU_Y))
+		pageCrossed = pagesDiffer(opStepInfo.address-u32(CPU_Y), opStepInfo.address)
 	case modeRelative:
-		offset := uint16(CPUMemory_Read(CPU_PC + 1))
+		offset := u32(CPUMemory_Read(CPU_PC + 1))
 		if offset < 0x80 {
 			opStepInfo.address = CPU_PC + 2 + offset
 		} else {
 			opStepInfo.address = CPU_PC + 2 + offset - 0x100
 		}
 	case modeZeroPage:
-		opStepInfo.address = uint16(CPUMemory_Read(CPU_PC + 1))
+		opStepInfo.address = u32(CPUMemory_Read(CPU_PC + 1))
 	case modeZeroPageX:
-		opStepInfo.address = uint16(CPUMemory_Read(CPU_PC+1)+CPU_X) & 0xff
+		opStepInfo.address = u32(CPUMemory_Read(CPU_PC+1)+CPU_X) & 0xff
 	case modeZeroPageY:
-		opStepInfo.address = uint16(CPUMemory_Read(CPU_PC+1)+CPU_Y) & 0xff
+		opStepInfo.address = u32(CPUMemory_Read(CPU_PC+1)+CPU_Y) & 0xff
 	}
 
-	CPU_PC += uint16(instructionSizes[opcode])
-	CPU_Cycles += uint64(instructionCycles[opcode])
+	CPU_PC += instructionSizes[opcode]
+	CPU_Cycles += instructionCycles[opcode]
 	if pageCrossed {
-		CPU_Cycles += uint64(instructionPageCycles[opcode])
+		CPU_Cycles += instructionPageCycles[opcode]
 	}
 
 	CPU_table[opcode]()
@@ -392,17 +390,17 @@ func CPU_Step() => int {
 }
 
 func CPU_nmi() {
-	CPU_push16(CPU_PC)
+	CPU_push16(u16(CPU_PC))
 	CPU_php()
-	CPU_PC = CPU_Read16(0xFFFA)
+	CPU_PC = u32(CPU_Read16(0xFFFA))
 	CPU_I = 1
 	CPU_Cycles += 7
 }
 
 func CPU_irq() {
-	CPU_push16(CPU_PC)
+	CPU_push16(u16(CPU_PC))
 	CPU_php()
-	CPU_PC = CPU_Read16(0xFFFE)
+	CPU_PC = u32(CPU_Read16(0xFFFE))
 	CPU_I = 1
 	CPU_Cycles += 7
 }
@@ -494,10 +492,10 @@ func CPU_bpl() {
 }
 
 func CPU_brk() {
-	CPU_push16(CPU_PC)
+	CPU_push16(u16(CPU_PC))
 	CPU_php()
 	CPU_sei()
-	CPU_PC = CPU_Read16(0xFFFE)
+	CPU_PC = u32(CPU_Read16(0xFFFE))
 }
 
 func CPU_bvc() {
@@ -587,7 +585,7 @@ func CPU_jmp() {
 }
 
 func CPU_jsr() {
-	CPU_push16(CPU_PC - 1)
+	CPU_push16(u16(CPU_PC - 1))
 	CPU_PC = opStepInfo.address
 }
 
@@ -679,11 +677,11 @@ func CPU_ror() {
 
 func CPU_rti() {
 	CPU_SetFlags(CPU_pull()&0xEF | 0x20)
-	CPU_PC = CPU_pull16()
+	CPU_PC = u32(CPU_pull16())
 }
 
 func CPU_rts() {
-	CPU_PC = CPU_pull16() + 1
+	CPU_PC = u32(CPU_pull16() + 1)
 }
 
 func CPU_sbc() {
@@ -739,7 +737,7 @@ func CPU_tay() {
 }
 
 func CPU_tsx() {
-	CPU_X = CPU_SP
+	CPU_X = byte(CPU_SP)
 	CPU_setZN(CPU_X)
 }
 
@@ -749,7 +747,7 @@ func CPU_txa() {
 }
 
 func CPU_txs() {
-	CPU_SP = CPU_X
+	CPU_SP = u32(CPU_X)
 }
 
 func CPU_tya() {

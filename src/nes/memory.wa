@@ -1,4 +1,4 @@
-func CPUMemory_Read(address: uint16) => byte {
+func CPUMemory_Read(address: u32) => byte {
 	switch {
 	case address < 0x2000:
 		return nes_RAM[address%0x0800]
@@ -16,14 +16,14 @@ func CPUMemory_Read(address: uint16) => byte {
 	case address < 0x6000:
 
 	case address >= 0x6000:
-		return Consol_Mapper.Read(address)
+		return Consol_Mapper.Read(u16(address))
 	default:
-		log_Fatalf("unhandled cpu memory read at address: 0x%04X", address)
+		log_Fatalf("unhandled cpu memory read at address: 0x%04X", u16(address))
 	}
 	return 0
 }
 
-func CPUMemory_Write(address: uint16, value: byte) {
+func CPUMemory_Write(address: u32, value: byte) {
 	switch {
 	case address < 0x2000:
 		nes_RAM[address%0x0800] = value
@@ -43,40 +43,40 @@ func CPUMemory_Write(address: uint16, value: byte) {
 	case address < 0x6000:
 
 	case address >= 0x6000:
-		Consol_Mapper.Write(address, value)
+		Consol_Mapper.Write(u16(address), value)
 	default:
-		log_Fatalf("unhandled cpu memory write at address: 0x%04X", address)
+		log_Fatalf("unhandled cpu memory write at address: 0x%04X", u16(address))
 	}
 }
 
-func PPUMemory_Read(address: uint16) => byte {
+func PPUMemory_Read(address: u32) => byte {
 	address = address % 0x4000
 	switch {
 	case address < 0x2000:
-		return Consol_Mapper.Read(address)
+		return Consol_Mapper.Read(u16(address))
 	case address < 0x3F00:
 		mode := Cartridge_Mirror
-		return PPU_nameTableData[MirrorAddress(mode, address)%2048]
+		return PPU_nameTableData[MirrorAddress(mode, u16(address))%2048]
 	case address < 0x4000:
 		return PPU_readPalette(address % 32)
 	default:
-		log_Fatalf("unhandled ppu memory read at address: 0x%04X", address)
+		log_Fatalf("unhandled ppu memory read at address: 0x%04X", u16(address))
 	}
 	return 0
 }
 
-func PPUMemory_Write(address: uint16, value: byte) {
+func PPUMemory_Write(address: u32, value: byte) {
 	address = address % 0x4000
 	switch {
 	case address < 0x2000:
-		Consol_Mapper.Write(address, value)
+		Consol_Mapper.Write(u16(address), value)
 	case address < 0x3F00:
 		mode := Cartridge_Mirror
-		PPU_nameTableData[MirrorAddress(mode, address)%2048] = value
+		PPU_nameTableData[MirrorAddress(mode, u16(address))%2048] = value
 	case address < 0x4000:
 		PPU_writePalette(address%32, value)
 	default:
-		log_Fatalf("unhandled ppu memory write at address: 0x%04X", address)
+		log_Fatalf("unhandled ppu memory write at address: 0x%04X", u16(address))
 	}
 }
 
