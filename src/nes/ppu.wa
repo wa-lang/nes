@@ -1,11 +1,11 @@
 
-#wa:linkname nes.PPU_Cycle
+#wa:force_register
 global PPU_Cycle: int
 
-#wa:linkname nes.PPU_ScanLine
+#wa:force_register
 global PPU_ScanLine: int
 
-#wa:linkname nes.PPU_Frame
+#wa:force_register
 global PPU_Frame: uint64
 
 global PPU_paletteData: [32]byte
@@ -20,56 +20,52 @@ global PPU_front: []u32
 global PPU_back: []u32
 
 
-#wa:linkname nes.PPU_v
+#wa:force_register
 global PPU_v: uint16
 
-#wa:linkname nes.PPU_t
+#wa:force_register
 global PPU_t: uint16
 
-#wa:linkname nes.PPU_x
+#wa:force_register
 global PPU_x: byte
 
-#wa:linkname nes.PPU_w
+#wa:force_register
 global PPU_w: byte
 
-#wa:linkname nes.PPU_f
+#wa:force_register
 global PPU_f: byte
 
-
-#wa:linkname nes.PPU_register
+#wa:force_register
 global PPU_register: byte
 
-
-#wa:linkname nes.PPU_nmiOccurred
+#wa:force_register
 global PPU_nmiOccurred: bool
 
-#wa:linkname nes.PPU_nmiOutput
+#wa:force_register
 global PPU_nmiOutput: bool
 
-#wa:linkname nes.PPU_nmiPrevious
+#wa:force_register
 global PPU_nmiPrevious: bool
 
-#wa:linkname nes.PPU_nmiDelay
+#wa:force_register
 global PPU_nmiDelay: byte
 
-
-#wa:linkname nes.PPU_nameTableByte
+#wa:force_register
 global PPU_nameTableByte: byte
 
-#wa:linkname nes.PPU_attributeTableByte
+#wa:force_register
 global PPU_attributeTableByte: byte
 
-#wa:linkname nes.PPU_lowTileByte
+#wa:force_register
 global PPU_lowTileByte: byte
 
-#wa:linkname nes.PPU_highTileByte
+#wa:force_register
 global PPU_highTileByte: byte
 
-#wa:linkname nes.PPU_tileData
+#wa:force_register
 global PPU_tileData: uint64
 
-
-#wa:linkname nes.PPU_spriteCount
+#wa:force_register
 global PPU_spriteCount: int
 
 global PPU_spritePatterns: [8]uint32
@@ -77,63 +73,58 @@ global PPU_spritePositions: [8]byte
 global PPU_spritePriorities: [8]byte
 global PPU_spriteIndexes: [8]byte
 
-
-#wa:linkname nes.PPU_flagNameTable
+#wa:force_register
 global PPU_flagNameTable: byte
 
-#wa:linkname nes.PPU_flagIncrement
+#wa:force_register
 global PPU_flagIncrement: byte
 
-#wa:linkname nes.PPU_flagSpriteTable
+#wa:force_register
 global PPU_flagSpriteTable: byte
 
-#wa:linkname nes.PPU_flagBackgroundTable
+#wa:force_register
 global PPU_flagBackgroundTable: byte
 
-#wa:linkname nes.PPU_flagSpriteSize
+#wa:force_register
 global PPU_flagSpriteSize: byte
 
-#wa:linkname nes.PPU_flagMasterSlave
+#wa:force_register
 global PPU_flagMasterSlave: byte
 
-
-#wa:linkname nes.PPU_flagGrayscale
+#wa:force_register
 global PPU_flagGrayscale: byte
 
-#wa:linkname nes.PPU_flagShowLeftBackground
+#wa:force_register
 global PPU_flagShowLeftBackground: byte
 
-#wa:linkname nes.PPU_flagShowLeftSprites
+#wa:force_register
 global PPU_flagShowLeftSprites: byte
 
-#wa:linkname nes.PPU_flagShowBackground
+#wa:force_register
 global PPU_flagShowBackground: byte
 
-#wa:linkname nes.PPU_flagShowSprites
+#wa:force_register
 global PPU_flagShowSprites: byte
 
-#wa:linkname nes.PPU_flagRedTint
+#wa:force_register
 global PPU_flagRedTint: byte
 
-#wa:linkname nes.PPU_flagGreenTint
+#wa:force_register
 global PPU_flagGreenTint: byte
 
-#wa:linkname nes.PPU_flagBlueTint
+#wa:force_register
 global PPU_flagBlueTint: byte
 
-
-#wa:linkname nes.PPU_flagSpriteZeroHit
+#wa:force_register
 global PPU_flagSpriteZeroHit: byte
 
-#wa:linkname nes.PPU_flagSpriteOverflow
+#wa:force_register
 global PPU_flagSpriteOverflow: byte
 
-
-#wa:linkname nes.PPU_oamAddress
+#wa:force_register
 global PPU_oamAddress: byte
 
-
-#wa:linkname nes.PPU_bufferedData
+#wa:force_register
 global PPU_bufferedData: byte
 
 func PPU_initNesPPU() {

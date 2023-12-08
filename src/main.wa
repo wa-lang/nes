@@ -7,42 +7,6 @@ import "myapp/nes"
 
 func main {
 	println("你好, 凹语言 + NES")
-
-	c, ok := canvas.QueryCanvas("#canvas")
-	if !ok {
-		return
-	}
-	ctx, ok := c.GetContext2D()
-	if !ok {
-		return
-	}
-
-	// cvstest.TestRect(ctx)
-	// cvstest.TestText(ctx)
-	// cvstest.TestPath(ctx)
-	// cvstest.TestLineStyle(ctx)
-	// cvstest.TestColorStyleShadow(ctx)
-	// cvstest.TestConversion(ctx)
-	// cvstest.TestImageDrawing(ctx)
-	// cvstest.TestPixelManipulation(ctx)
-	// cvstest.TestSynthesis(ctx)
-	// cvstest.TestOther(ctx)
-	// cvstest.TestWa(ctx)
-
-	buf := make([]u8, 256*256*4)
-	for x := 0; x < 256; x++ {
-		for y := 0; y < 256; y++ {
-			buf[(y*256+x)*4+0] = u8(x)
-			buf[(y*256+x)*4+1] = u8(x)
-			buf[(y*256+x)*4+2] = u8(y)
-			buf[(y*256+x)*4+3] = 255
-		}
-	}
-
-	ctx.PutImageData(buf, 0, 0, 0, 0, 256, 256)
-
-	ctx.SetFillStyle("green")
-	ctx.FillRect(10, 10, 50, 50)
 }
 
 global nes_ctx: canvas.Context2D
@@ -82,18 +46,7 @@ func NES_SetButtons2(btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, b
 }
 
 // 执行一定时间
-func NES_StepSeconds(dt: f64) {
-	println("NES_StepSeconds dt=", dt)
-
-	if dt > 1 {
-		dt = 0
-	}
-	if dt == 0 {
-		return
-	}
-
-	//console.StepSeconds(dt)
-	//println("NES_StepSeconds console.StepSeconds ok")
+func NES_StepFrame() {
 	nes.Console_StepFrame()
 
 	nes_ctx.PutImageData(raw(nes.Console_Buffer()), 0, 0, 0, 0, 256, 240)

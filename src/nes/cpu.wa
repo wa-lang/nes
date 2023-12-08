@@ -135,53 +135,62 @@ global instructionNames = [256]string{
 	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC",
 }
 
-#wa:linkname nes.CPU_Cycles
+#wa:force_register
 global CPU_Cycles: u64
 
-#wa:linkname nes.CPU_PC
+#wa:force_register
 global CPU_PC: int
 
-#wa:linkname nes.CPU_SP
+#wa:force_register
 global CPU_SP: int
 
-#wa:linkname nes.CPU_A
+#wa:force_register
 global CPU_A: byte
 
-#wa:linkname nes.CPU_X
+#wa:force_register
 global CPU_X: byte
 
-#wa:linkname nes.CPU_Y
+#wa:force_register
 global CPU_Y: byte
 
-#wa:linkname nes.CPU_C
+#wa:force_register
 global CPU_C: byte
 
-#wa:linkname nes.CPU_Z
+#wa:force_register
 global CPU_Z: byte
 
-#wa:linkname nes.CPU_I
+#wa:force_register
 global CPU_I: byte
 
-#wa:linkname nes.CPU_D
+#wa:force_register
 global CPU_D: byte
 
-#wa:linkname nes.CPU_B
+#wa:force_register
 global CPU_B: byte
 
-#wa:linkname nes.CPU_U
+#wa:force_register
 global CPU_U: byte
 
-#wa:linkname nes.CPU_V
+#wa:force_register
 global CPU_V: byte
 
-#wa:linkname nes.CPU_N
+#wa:force_register
 global CPU_N: byte
 
-#wa:linkname nes.CPU_interrupt
+#wa:force_register
 global CPU_interrupt: u32
 
-#wa:linkname nes.CPU_stall
+#wa:force_register
 global CPU_stall: int
+
+#wa:force_register
+global stepInfoAddress: int
+
+#wa:force_register
+global stepInfoPc: int
+
+#wa:force_register
+global stepInfoMode: int
 
 global CPU_table: [256]func()
 
@@ -227,12 +236,6 @@ func CPU_createTable() {
 	}
 }
 
-global opStepInfo: struct {
-	address: int
-	pc:      int
-	mode:    int
-}
-
 func CPU_Reset() {
 	CPU_PC = int(CPU_Read16(0xFFFC))
 	CPU_SP = 0xFD
@@ -245,7 +248,7 @@ func pagesDiffer(a, b: int) => bool {
 
 func CPU_addBranchCycles() {
 	CPU_Cycles++
-	if pagesDiffer(opStepInfo.pc, opStepInfo.address) {
+	if pagesDiffer(stepInfoPc, stepInfoAddress) {
 		CPU_Cycles++
 	}
 }
@@ -369,45 +372,45 @@ func CPU_Step() => int {
 
 	opcode := CPUMemory_Read(CPU_PC)
 
-	opStepInfo.pc = CPU_PC
-	opStepInfo.mode = instructionModes[opcode]
+	stepInfoPc = CPU_PC
+	stepInfoMode = instructionModes[opcode]
 
 	pageCrossed: bool
-	switch opStepInfo.mode {
+	switch stepInfoMode {
 	case modeAbsolute:
-		opStepInfo.address = int(CPU_Read16(CPU_PC + 1))
+		stepInfoAddress = int(CPU_Read16(CPU_PC + 1))
 	case modeAbsoluteX:
-		opStepInfo.address = int(CPU_Read16(CPU_PC+1) + u16(CPU_X))
-		pageCrossed = pagesDiffer(opStepInfo.address-int(CPU_X), opStepInfo.address)
+		stepInfoAddress = int(CPU_Read16(CPU_PC+1) + u16(CPU_X))
+		pageCrossed = pagesDiffer(stepInfoAddress-int(CPU_X), stepInfoAddress)
 	case modeAbsoluteY:
-		opStepInfo.address = int(CPU_Read16(CPU_PC+1) + uint16(CPU_Y))
-		pageCrossed = pagesDiffer(opStepInfo.address-int(CPU_Y), opStepInfo.address)
+		stepInfoAddress = int(CPU_Read16(CPU_PC+1) + uint16(CPU_Y))
+		pageCrossed = pagesDiffer(stepInfoAddress-int(CPU_Y), stepInfoAddress)
 	case modeAccumulator:
-		opStepInfo.address = 0
+		stepInfoAddress = 0
 	case modeImmediate:
-		opStepInfo.address = CPU_PC + 1
+		stepInfoAddress = CPU_PC + 1
 	case modeImplied:
-		opStepInfo.address = 0
+		stepInfoAddress = 0
 	case modeIndexedIndirect:
-		opStepInfo.address = int(CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1) + CPU_X)))
+		stepInfoAddress = int(CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1) + CPU_X)))
 	case modeIndirect:
-		opStepInfo.address = int(CPU_read16bug(CPU_Read16(CPU_PC + 1)))
+		stepInfoAddress = int(CPU_read16bug(CPU_Read16(CPU_PC + 1)))
 	case modeIndirectIndexed:
-		opStepInfo.address = int(CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1))) + uint16(CPU_Y))
-		pageCrossed = pagesDiffer(opStepInfo.address-int(CPU_Y), opStepInfo.address)
+		stepInfoAddress = int(CPU_read16bug(uint16(CPUMemory_Read(CPU_PC+1))) + uint16(CPU_Y))
+		pageCrossed = pagesDiffer(stepInfoAddress-int(CPU_Y), stepInfoAddress)
 	case modeRelative:
 		offset := int(CPUMemory_Read(CPU_PC + 1))
 		if offset < 0x80 {
-			opStepInfo.address = CPU_PC + 2 + offset
+			stepInfoAddress = CPU_PC + 2 + offset
 		} else {
-			opStepInfo.address = CPU_PC + 2 + offset - 0x100
+			stepInfoAddress = CPU_PC + 2 + offset - 0x100
 		}
 	case modeZeroPage:
-		opStepInfo.address = int(CPUMemory_Read(CPU_PC + 1))
+		stepInfoAddress = int(CPUMemory_Read(CPU_PC + 1))
 	case modeZeroPageX:
-		opStepInfo.address = int(CPUMemory_Read(CPU_PC+1)+CPU_X) & 0xff
+		stepInfoAddress = int(CPUMemory_Read(CPU_PC+1)+CPU_X) & 0xff
 	case modeZeroPageY:
-		opStepInfo.address = int(CPUMemory_Read(CPU_PC+1)+CPU_Y) & 0xff
+		stepInfoAddress = int(CPUMemory_Read(CPU_PC+1)+CPU_Y) & 0xff
 	}
 
 	CPU_PC += instructionSizes[opcode]
@@ -439,7 +442,7 @@ func CPU_irq() {
 
 func CPU_adc() {
 	a := CPU_A
-	b := CPUMemory_Read(opStepInfo.address)
+	b := CPUMemory_Read(stepInfoAddress)
 	c := CPU_C
 	CPU_A = a + b + c
 	CPU_setZN(CPU_A)
@@ -456,47 +459,47 @@ func CPU_adc() {
 }
 
 func CPU_and() {
-	CPU_A = CPU_A & CPUMemory_Read(opStepInfo.address)
+	CPU_A = CPU_A & CPUMemory_Read(stepInfoAddress)
 	CPU_setZN(CPU_A)
 }
 
 func CPU_asl() {
-	if opStepInfo.mode == modeAccumulator {
+	if stepInfoMode == modeAccumulator {
 		CPU_C = (CPU_A >> 7) & 1
 		CPU_A <<= 1
 		CPU_setZN(CPU_A)
 	} else {
-		value := CPUMemory_Read(opStepInfo.address)
+		value := CPUMemory_Read(stepInfoAddress)
 		CPU_C = (value >> 7) & 1
 		value <<= 1
-		CPUMemory_Write(opStepInfo.address, value)
+		CPUMemory_Write(stepInfoAddress, value)
 		CPU_setZN(value)
 	}
 }
 
 func CPU_bcc() {
 	if CPU_C == 0 {
-		CPU_PC = opStepInfo.address
+		CPU_PC = stepInfoAddress
 		CPU_addBranchCycles()
 	}
 }
 
 func CPU_bcs() {
 	if CPU_C != 0 {
-		CPU_PC = opStepInfo.address
+		CPU_PC = stepInfoAddress
 		CPU_addBranchCycles()
 	}
 }
 
 func CPU_beq() {
 	if CPU_Z != 0 {
-		CPU_PC = opStepInfo.address
+		CPU_PC = stepInfoAddress
 		CPU_addBranchCycles()
 	}
 }
 
 func CPU_bit() {
-	value := CPUMemory_Read(opStepInfo.address)
+	value := CPUMemory_Read(stepInfoAddress)
 	CPU_V = (value >> 6) & 1
 	CPU_setZ(value & CPU_A)
 	CPU_setN(value)
@@ -504,21 +507,21 @@ func CPU_bit() {
 
 func CPU_bmi() {
 	if CPU_N != 0 {
-		CPU_PC = opStepInfo.address
+		CPU_PC = stepInfoAddress
 		CPU_addBranchCycles()
 	}
 }
 
 func CPU_bne() {
 	if CPU_Z == 0 {
-		CPU_PC = opStepInfo.address
+		CPU_PC = stepInfoAddress
 		CPU_addBranchCycles()
 	}
 }
 
 func CPU_bpl() {
 	if CPU_N == 0 {
-		CPU_PC = opStepInfo.address
+		CPU_PC = stepInfoAddress
 		CPU_addBranchCycles()
 	}
 }
@@ -532,14 +535,14 @@ func CPU_brk() {
 
 func CPU_bvc() {
 	if CPU_V == 0 {
-		CPU_PC = opStepInfo.address
+		CPU_PC = stepInfoAddress
 		CPU_addBranchCycles()
 	}
 }
 
 func CPU_bvs() {
 	if CPU_V != 0 {
-		CPU_PC = opStepInfo.address
+		CPU_PC = stepInfoAddress
 		CPU_addBranchCycles()
 	}
 }
@@ -561,23 +564,23 @@ func CPU_clv() {
 }
 
 func CPU_cmp() {
-	value := CPUMemory_Read(opStepInfo.address)
+	value := CPUMemory_Read(stepInfoAddress)
 	CPU_compare(CPU_A, value)
 }
 
 func CPU_cpx() {
-	value := CPUMemory_Read(opStepInfo.address)
+	value := CPUMemory_Read(stepInfoAddress)
 	CPU_compare(CPU_X, value)
 }
 
 func CPU_cpy() {
-	value := CPUMemory_Read(opStepInfo.address)
+	value := CPUMemory_Read(stepInfoAddress)
 	CPU_compare(CPU_Y, value)
 }
 
 func CPU_dec() {
-	value := CPUMemory_Read(opStepInfo.address) - 1
-	CPUMemory_Write(opStepInfo.address, value)
+	value := CPUMemory_Read(stepInfoAddress) - 1
+	CPUMemory_Write(stepInfoAddress, value)
 	CPU_setZN(value)
 }
 
@@ -592,13 +595,13 @@ func CPU_dey() {
 }
 
 func CPU_eor() {
-	CPU_A = CPU_A ^ CPUMemory_Read(opStepInfo.address)
+	CPU_A = CPU_A ^ CPUMemory_Read(stepInfoAddress)
 	CPU_setZN(CPU_A)
 }
 
 func CPU_inc() {
-	value := CPUMemory_Read(opStepInfo.address) + 1
-	CPUMemory_Write(opStepInfo.address, value)
+	value := CPUMemory_Read(stepInfoAddress) + 1
+	CPUMemory_Write(stepInfoAddress, value)
 	CPU_setZN(value)
 }
 
@@ -613,39 +616,39 @@ func CPU_iny() {
 }
 
 func CPU_jmp() {
-	CPU_PC = opStepInfo.address
+	CPU_PC = stepInfoAddress
 }
 
 func CPU_jsr() {
 	CPU_push16(u16(CPU_PC - 1))
-	CPU_PC = opStepInfo.address
+	CPU_PC = stepInfoAddress
 }
 
 func CPU_lda() {
-	CPU_A = CPUMemory_Read(opStepInfo.address)
+	CPU_A = CPUMemory_Read(stepInfoAddress)
 	CPU_setZN(CPU_A)
 }
 
 func CPU_ldx() {
-	CPU_X = CPUMemory_Read(opStepInfo.address)
+	CPU_X = CPUMemory_Read(stepInfoAddress)
 	CPU_setZN(CPU_X)
 }
 
 func CPU_ldy() {
-	CPU_Y = CPUMemory_Read(opStepInfo.address)
+	CPU_Y = CPUMemory_Read(stepInfoAddress)
 	CPU_setZN(CPU_Y)
 }
 
 func CPU_lsr() {
-	if opStepInfo.mode == modeAccumulator {
+	if stepInfoMode == modeAccumulator {
 		CPU_C = CPU_A & 1
 		CPU_A >>= 1
 		CPU_setZN(CPU_A)
 	} else {
-		value := CPUMemory_Read(opStepInfo.address)
+		value := CPUMemory_Read(stepInfoAddress)
 		CPU_C = value & 1
 		value >>= 1
-		CPUMemory_Write(opStepInfo.address, value)
+		CPUMemory_Write(stepInfoAddress, value)
 		CPU_setZN(value)
 	}
 }
@@ -654,7 +657,7 @@ func CPU_nop() {
 }
 
 func CPU_ora() {
-	CPU_A = CPU_A | CPUMemory_Read(opStepInfo.address)
+	CPU_A = CPU_A | CPUMemory_Read(stepInfoAddress)
 	CPU_setZN(CPU_A)
 }
 
@@ -676,33 +679,33 @@ func CPU_plp() {
 }
 
 func CPU_rol() {
-	if opStepInfo.mode == modeAccumulator {
+	if stepInfoMode == modeAccumulator {
 		c := CPU_C
 		CPU_C = (CPU_A >> 7) & 1
 		CPU_A = (CPU_A << 1) | c
 		CPU_setZN(CPU_A)
 	} else {
 		c := CPU_C
-		value := CPUMemory_Read(opStepInfo.address)
+		value := CPUMemory_Read(stepInfoAddress)
 		CPU_C = (value >> 7) & 1
 		value = (value << 1) | c
-		CPUMemory_Write(opStepInfo.address, value)
+		CPUMemory_Write(stepInfoAddress, value)
 		CPU_setZN(value)
 	}
 }
 
 func CPU_ror() {
-	if opStepInfo.mode == modeAccumulator {
+	if stepInfoMode == modeAccumulator {
 		c := CPU_C
 		CPU_C = CPU_A & 1
 		CPU_A = (CPU_A >> 1) | (c << 7)
 		CPU_setZN(CPU_A)
 	} else {
 		c := CPU_C
-		value := CPUMemory_Read(opStepInfo.address)
+		value := CPUMemory_Read(stepInfoAddress)
 		CPU_C = value & 1
 		value = (value >> 1) | (c << 7)
-		CPUMemory_Write(opStepInfo.address, value)
+		CPUMemory_Write(stepInfoAddress, value)
 		CPU_setZN(value)
 	}
 }
@@ -718,7 +721,7 @@ func CPU_rts() {
 
 func CPU_sbc() {
 	a := CPU_A
-	b := CPUMemory_Read(opStepInfo.address)
+	b := CPUMemory_Read(stepInfoAddress)
 	c := CPU_C
 	CPU_A = a - b - (1 - c)
 	CPU_setZN(CPU_A)
@@ -747,15 +750,15 @@ func CPU_sei() {
 }
 
 func CPU_sta() {
-	CPUMemory_Write(opStepInfo.address, CPU_A)
+	CPUMemory_Write(stepInfoAddress, CPU_A)
 }
 
 func CPU_stx() {
-	CPUMemory_Write(opStepInfo.address, CPU_X)
+	CPUMemory_Write(stepInfoAddress, CPU_X)
 }
 
 func CPU_sty() {
-	CPUMemory_Write(opStepInfo.address, CPU_Y)
+	CPUMemory_Write(stepInfoAddress, CPU_Y)
 }
 
 func CPU_tax() {
