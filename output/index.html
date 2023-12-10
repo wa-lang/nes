@@ -5,10 +5,18 @@
 <div style="text-align: center">
   <canvas id="nes" width="256" height="240" style="width:768px;height:720px;"></canvas>
 
-  <div>小键盘方向键：方向键; 回车:start; 空格:select; Ctrl: A; Shift: B</div>
+  <div>小键盘方向键：方向键; 回车:start; 空格:select; Ctrl: A; Shift: B; R: Reset</div>
+
+  <button id='A'>A</button>
+  <button id='B'>B</button>
+  <button id='Select'>Select</button>
+  <button id='Start'>Start</button>
+  <button id='Reset'>Reset</button>
 </div>
 
 <script type="text/javascript" src="./nes.js"></script>
+<script src="./hammer.js"></script>
+<script src="./my-joystick.js"></script>
 
 <script>
   let app = new WaApp();
@@ -28,6 +36,18 @@
   let btnRight = false;
   let btnReset = false;
 
+  function press_key(key) {
+    if (key_map.has(key)) {
+      let k = key_map.get(key);
+      k.pressed = true;
+    }
+    else {
+      const k = {}
+      k.pressed = true;
+      key_map.set(key, k);
+    }
+  }
+
   function release_key(key) {
     if (key_map.has(key)) {
       const k = key_map.get(key);
@@ -43,29 +63,156 @@
     return false;
   }
 
-  window.onload = () => { 
-    nesCanvas = document.getElementById('nes'); 
-    document.addEventListener('mousedown', (event) => { 
-      lastDownTarget = event.target; 
-      console.log(`Mousedown Event: ${event}`);
-    }, false);
+  let jsconf = {
+    frontColor: "#0680d7",
+    backColor: "red",
+    backR: 100,
+    frontR: 40,
+    distanceX: null,
+    distanceY: null,
+  };
+  const joystick = new MyJoystick(jsconf);
+  joystick.openJoystick(function (ev) {
+    release_key('Up')
+    release_key('Down')
+    release_key('Left')
+    release_key('Right')
 
+    if (ev.direction === 'up') {
+      press_key('Up');
+    } else if (ev.direction === 'down') {
+      press_key('Down');
+    } else if (ev.direction === 'left') {
+      press_key('Left');
+    } else if (ev.direction === 'right') {
+      press_key('Right');
+    }
+  });
+
+  {
+    let A = document.getElementById("A");
+    A.addEventListener("touchstart", function(ev){
+      press_key('A')
+    }, false);
+    A.addEventListener("touchend", function(ev){
+      release_key('A')
+    }, false);
+  }
+  {
+    let B = document.getElementById("B");
+    B.addEventListener("touchstart", function(ev){
+      press_key('B')
+    }, false);
+    B.addEventListener("touchend", function(ev){
+      release_key('B')
+    }, false);
+  }
+  {
+    let Select = document.getElementById("Select");
+    Select.addEventListener("touchstart", function(ev){
+      press_key('Select')
+    }, false);
+    Select.addEventListener("touchend", function(ev){
+      release_key('Select')
+    }, false);
+  }
+  {
+    let Start = document.getElementById("Start");
+    Start.addEventListener("touchstart", function(ev){
+      press_key('Start')
+    }, false);
+    Start.addEventListener("touchend", function(ev){
+      release_key('Start')
+    }, false);
+  }
+  {
+    let Reset = document.getElementById("Reset");
+    Reset.addEventListener("touchstart", function(ev){
+      press_key('Reset')
+    }, false);
+    Reset.addEventListener("touchend", function(ev){
+      release_key('Reset')
+    }, false);
+  }
+
+  window.onload = () => {
     document.addEventListener('keydown', (event) => {
-      if (key_map.has(event.key)) {
-        const k = key_map.get(event.key);
-        k.pressed = true;
-      }
-      else {
-        const k = {}
-        k.pressed = true;
-        key_map.set(event.key, k);
+      switch (event.key) {
+        case 'Control':
+          press_key('A');
+          break;
+
+        case 'Shift':
+          press_key('B');
+          break;
+
+        case ' ':
+          press_key('Select')
+          break;
+
+        case 'Enter':
+          press_key('Start')
+          break;
+
+        case 'ArrowUp':
+          press_key('Up')
+          break;
+
+        case 'ArrowDown':
+          press_key('Down')
+          break;
+
+        case 'ArrowLeft':
+          press_key('Left')
+          break;
+
+        case 'ArrowRight':
+          press_key('Right')
+          break;
+
+        case 'r':
+          press_key('Reset')
+          break;
       }
     }, false);
 
     document.addEventListener('keyup', (event) => {
-      if (key_map.has(event.key)) {
-        const k = key_map.get(event.key);
-        release_key(event.key)
+      switch (event.key) {
+        case 'Control':
+          release_key('A');
+          break;
+
+        case 'Shift':
+          release_key('B');
+          break;
+
+        case ' ':
+          release_key('Select');
+          break;
+
+        case 'Enter':
+          release_key('Start')
+          break;
+
+        case 'ArrowUp':
+          release_key('Up')
+          break;
+
+        case 'ArrowDown':
+          release_key('Down')
+          break;
+
+        case 'ArrowLeft':
+          release_key('Left')
+          break;
+
+        case 'ArrowRight':
+          release_key('Right')
+          break;
+
+        case 'r':
+          release_key('Reset')
+          break;
       }
     }, false);
 
@@ -76,41 +223,24 @@
 
       let preTimeStamp;
       let stepAnima = function (timeStamp) {
-        // 转化为秒为单位
-        if(timeStamp > 0) {
-          timeStamp = timeStamp/1000;
-        } else {
-          timeStamp = 0;
-        }
+        // 执行
+        btnA = get_key_status('A') && !btnA;
+        btnB = get_key_status('B') && !btnB;
+        btnSelect = get_key_status('Select');
+        btnStart = get_key_status('Start');
+        btnUp = get_key_status('Up')
+        btnDown = get_key_status('Down')
+        btnLeft = get_key_status('Left')
+        btnRight = get_key_status('Right')
+        btnReset = get_key_status('Reset')
 
-        // 记录当前时间
-        if (!preTimeStamp) {
-          preTimeStamp = timeStamp;
-        }
-
-        // 时间间隔
-        let dt = timeStamp - preTimeStamp;
-        //console.log('dt: ', dt);
-
-        if(btnReset) {
+        if (btnReset) {
           btnReset = false;
           app.NES_Reset();
         }
 
-        // 执行
-        btnA = get_key_status('Control') && !btnA;
-        btnB = get_key_status('Alt') && !btnB;
-        btnSelect = get_key_status(' ');
-        btnStart = get_key_status('Enter');
-        btnUp = get_key_status('ArrowUp')
-        btnDown = get_key_status('ArrowDown')
-        btnLeft = get_key_status('ArrowLeft')
-        btnRight = get_key_status('ArrowRight')
-
-        //console.log("key: btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight")
-        //console.log(`key: ${btnA}, ${btnB}, ${btnSelect}, ${btnStart}, ${btnUp}, ${btnDown}, ${btnLeft}, ${btnRight}`)
         app.NES_SetButtons1(btnA, btnB, btnSelect, btnStart, btnUp, btnDown, btnLeft, btnRight);
-        app.NES_StepFrame(dt);
+        app.NES_StepFrame();
 
         preTimeStamp = timeStamp;
         window.requestAnimationFrame(stepAnima);
@@ -119,4 +249,3 @@
     });
   }
 </script>
-
