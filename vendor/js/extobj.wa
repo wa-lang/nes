@@ -35,7 +35,6 @@ func _getHandle(p: u32) => Handle
 
 func _handleFinalizer(p: u32) {
     h := _getHandle(p)
-    println("_handleFinalizer(), 释放 Block:", p, "handle: ", h)
 	jsFreeObj(h)
 }
 
