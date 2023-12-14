@@ -310,33 +310,35 @@
   box-shadow: inset 0 1px 2px rgba(255,255,255,.5), 0 3px 15px rgba(0,0,0,.8);
 }
 
-.audio-box {
-  width: 70%;
-  height: 20%;
-  border-top-right-radius: 60px;
+.game-name {
   position: absolute;
-  top: 8%;
+  top: 10%;
+  left: 50%;
+  width: 80%;
+  transform: translateX(-50%);
+  font-family: 'Rocher';
+  font-size: 16px;
+  font-palette: --pink;
+}
+
+.game-select {
+  width: 50%;
+  height: 6%;
+  position: absolute;
+  top: 17%;
   left: 10%;
   overflow: hidden;
-}
-
-.audio {
-  stop-color: 0;
-  top: 10%;
-  width: 100%;
-  height: 20%;
-  margin: 0 0 12px 12px;
-}
-
-.audio::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(#2e2e2e 24%,#0000 25%);
-  background-size: 6px 6px;
+  background: transparent;
+  border: none;
+  outline: none;
+  background: #3a3a3a;
+  color: rgba(255,255,255,.8);
+  border-radius: 3px;
+  box-shadow: inset 1px 1px 1px rgba(255,255,255,.4), 0 0 0 1px #2b2b2b, 1px 2px 10px rgba(0,0,0,.5);
+  text-align: center;
+  appearance:none;
+  -moz-appearance:none;
+  -webkit-appearance:none;
 }
 
 .analog {

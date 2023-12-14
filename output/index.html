@@ -18,7 +18,13 @@
         <div class="analog"></div>
       </div>
       <div class="joy-right">
-        <div class="audio-box"><div class="audio"></div></div>
+        <div class="game-name">Game Name</div>
+        <select class="game-select">
+          <option value="1">坦克大战</option>
+          <option value="2">超级玛丽</option>
+          <option value="3">魂斗罗</option>
+          <option value="4">双截龙</option>
+        </select>
         <div class="bumper-right"></div>
         <div class="dpad-container">
           <div class="dpad-x"></div>
@@ -122,6 +128,14 @@
     } else if (ev.direction === 'right') {
       press_key('Right');
     }
+  });
+
+  // 更新游戏
+  const gameSelectDom = document.querySelector('.game-select');
+  gameSelectDom.addEventListener('change', function (ev) {
+    const value = ev.target.value;
+    console.log('xxx#value', value);
+    // 我在这里
   });
 
   {
