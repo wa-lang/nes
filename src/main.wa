@@ -12,8 +12,22 @@ func main {
 global nes_ctx: canvas.Context2D
 
 // 初始化调用
-func NES_InitGame {
-	romBytes := nes.BattleCity_nes[:]
+func NES_InitGame(idx: i32) {
+	romBytes: []byte
+	switch idx {
+	case 0:
+		romBytes = []byte(BattleCity_nes)
+	case 1:
+		romBytes = []byte(GongLuSaiChe_nes)
+	case 2:
+		romBytes = []byte(HunDouLuo1_S_30_nes)
+	case 3:
+		romBytes = []byte(SuperMarioBros_nes)
+
+	default:
+		romBytes = []byte(BattleCity_nes)
+	}
+
 	err := nes.InitConsole(romBytes)
 	if err != nil {
 		panic("NES_InitGame failed")

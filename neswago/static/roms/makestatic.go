@@ -26,6 +26,9 @@ var files = []struct {
 	File string
 }{
 	{"BattleCity_nes", "BattleCity.nes"},
+	{"GongLuSaiChe_nes", "GongLuSaiChe.nes"},
+	{"HunDouLuo1_S_30_nes", "HunDouLuo1_S_30.nes"},
+	{"SuperMarioBros_nes", "SuperMarioBros.nes"},
 }
 
 func main() {
