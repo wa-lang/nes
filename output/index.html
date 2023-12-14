@@ -20,10 +20,10 @@
       <div class="joy-right">
         <div class="game-name">Game Name</div>
         <select class="game-select">
-          <option value="1">坦克大战</option>
-          <option value="2">超级玛丽</option>
-          <option value="3">魂斗罗</option>
-          <option value="4">双截龙</option>
+          <option value="0">坦克大战</option>
+          <option value="1">公路战士</option>
+          <option value="2">魂斗罗</option>
+          <option value="3">超级玛丽</option>
         </select>
         <div class="bumper-right"></div>
         <div class="dpad-container">
@@ -134,8 +134,8 @@
   const gameSelectDom = document.querySelector('.game-select');
   gameSelectDom.addEventListener('change', function (ev) {
     const value = ev.target.value;
-    console.log('xxx#value', value);
-    // 我在这里
+    app.NES_InitGame(Number(value))
+    // TOODs
   });
 
   {
