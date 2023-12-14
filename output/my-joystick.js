@@ -1,4 +1,4 @@
-const MyJoystick = function (obj) {
+const MyJoystick = function (obj, isRotate = false) {
   this.hammertime = {};
   // 回调信息
   this.callbackInfo = {
@@ -6,6 +6,7 @@ const MyJoystick = function (obj) {
     effective: null,
     status: null,
   };
+  this.isRotate = isRotate;
   // 配置
   const config = {
     frontColor: obj.frontColor || "red",
@@ -37,8 +38,8 @@ const MyJoystick = function (obj) {
     this.ui.container.appendChild(this.ui.front);
 
     // 将 dom 元素添加至 body
-    const bodyDom = document.body;
-    bodyDom.appendChild(this.ui.container);
+    const parentDom = document.querySelector('.analog')
+    parentDom.appendChild(this.ui.container);
 
     this.stylizeUI();
     this.addArrows();
@@ -50,7 +51,7 @@ const MyJoystick = function (obj) {
     var styles = {};
     styles.container = {
       position: "absolute",
-      opacity: 0.5,
+      // opacity: 0.6,
       top: config.distanceY,
       left: config.distanceX,
     };
@@ -62,7 +63,7 @@ const MyJoystick = function (obj) {
       marginLeft: -config.backR / 2 + "px",
       marginTop: -config.backR / 2 + "px",
       background: config.backColor,
-      opacity: 0.5,
+      // opacity: 0.8,
       borderRadius: "50%",
     };
     styles.front = {
@@ -110,21 +111,25 @@ const MyJoystick = function (obj) {
     const styleUp = {
       top: 2 + "px",
       left: "40%",
+      opacity: 0.5,
     };
     const styleDown = {
       left: "40%",
       bottom: 2 + "px",
       transform: "rotate(180deg)",
+      opacity: 0.5,
     };
     const styleLeft = {
       left: 2 + "px",
       top: "40%",
       transform: "rotate(-90deg)",
+      opacity: 0.5,
     };
     const styleRight = {
       right: 2 + "px",
       top: "40%",
       transform: "rotate(90deg)",
+      opacity: 0.5,
     };
     // 使用自定义函数extend合并style对象
     extend(this.arrowsGroup.upArrow.style, styleUp);
@@ -186,6 +191,9 @@ const MyJoystick = function (obj) {
     this.hammertime.on("panmove", function (ev) {
       that.callbackInfo.status = "move";
       var { dis, angle } = that.backToCenter(ev);
+      if (that.isRotate) {
+        angle = (angle + 90) % 360;
+      }
       that.isEffective(ev, dis, angle, callback);
     });
     // 移动事件结束
@@ -210,7 +218,7 @@ const MyJoystick = function (obj) {
       callback(this.callbackInfo);
     } else {
       // console.log("有效：", ev);
-      var dir = getDirectionByAngle(angle);
+      var dir = getDirectionByAngle(angle, this.isRotate);
       this.callbackInfo.direction = dir;
       this.callbackInfo.effective = true;
       callback(this.callbackInfo);
@@ -223,6 +231,9 @@ const MyJoystick = function (obj) {
     var res = this.ui.container.getBoundingClientRect();
     var dx = ev.center.x - res.x;
     var dy = ev.center.y - res.y;
+    if (this.isRotate) {
+      [dx, dy] = [dy, -dx];
+    }
     var dis = Math.sqrt(dx * dx + dy * dy);
     var angle = Math.atan2(dy, dx) * (180 / Math.PI);
     // console.log(angle);
@@ -251,20 +262,20 @@ const MyJoystick = function (obj) {
   };
 
   // 根据 angle 判断方向
-  const getDirectionByAngle = function (angle) {
+  const getDirectionByAngle = function (angle, isRotate) {
     var direction = "";
     if (angle < -45 && angle >= -135) {
       // this.tipText("上");
-      direction = "up";
+      direction = isRotate ? "left" : "up";
     } else if (angle < -135 || angle >= 135) {
       // this.tipText("左");
-      direction = "left";
+      direction = isRotate ? "down" : "left";
     } else if (angle >= 45 && angle < 135) {
       // this.tipText("下");
-      direction = "down";
+      direction = isRotate ? "right" : "down";
     } else if (angle < 45 && angle >= -45) {
       // this.tipText("右");
-      direction = "right";
+      direction = isRotate ? "up" : "right";
     }
     return direction;
   };

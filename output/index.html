@@ -1,24 +1,59 @@
 <!DOCTYPE html>
-
-<title>凹语言版 - NES 模拟器</title>
-
-<div style="text-align: center">
-  <canvas id="nes" width="256" height="240" style="width:768px;height:720px;"></canvas>
-
-  <div>小键盘方向键：方向键; 回车:start; 空格:select; Ctrl: A; Shift: B; R: Reset</div>
-
-  <button id='A'>A</button>
-  <button id='B'>B</button>
-  <button id='Select'>Select</button>
-  <button id='Start'>Start</button>
-  <button id='Reset'>Reset</button>
-</div>
-
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>凹语言版 - NES 模拟器</title>
+  <link href="./style.css" rel="stylesheet">
+</head>
+<body>
+  <div class="game">
+    <div class="title">Wa Game <sup><em>2023</em></sup></div>
+    <div class="game-box">
+      <div class="joy-left">
+        <div class="bumper-left"></div>
+        <div id="Select" class="select-btn"></div>
+        <div id="Start" class="start-btn"></div>
+        <div id="Reset" class="reset-btn"></div>
+        <div class="analog"></div>
+      </div>
+      <div class="joy-right">
+        <div class="audio-box"><div class="audio"></div></div>
+        <div class="bumper-right"></div>
+        <div class="dpad-container">
+          <div class="dpad-x"></div>
+          <div id="A" class="dpad-a"></div>
+          <div id="B" class="dpad-b"></div>
+          <div class="dpad-y"></div>
+        </div>
+      </div>
+      <div class="screen-outer">
+        <div class="screen-inner"></div>
+        <canvas id="nes" width="256" height="240"></canvas>
+      </div>
+    </div>
+    <div class="hint">
+      方向键：<em>小键盘方向键</em>
+      Start：<em>回车</em>
+      Select：<em>空格</em>
+      A：<em>Ctrl</em>
+      B：<em>Shift</em>
+      Reset：<em>R</em>
+    </div>
+  </div>
 <script type="text/javascript" src="./nes.js"></script>
 <script src="./hammer.js"></script>
 <script src="./my-joystick.js"></script>
-
 <script>
+  const IS_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (IS_MOBILE) {
+    const gameDom = document.querySelector('.game');
+    gameDom.style.transform = 'rotate(90deg) translate(0, -43%) scale(0.8)';
+    gameDom.style.transformOrigin = 'left top';
+    const hintDom = document.querySelector('.hint')
+    hintDom.style.display = 'none'
+  }
+
   let app = new WaApp();
 
   let key_map = new Map();
@@ -64,14 +99,14 @@
   }
 
   let jsconf = {
-    frontColor: "#0680d7",
-    backColor: "red",
+    frontColor: "radial-gradient(circle at top, #788084 0%,#212427 100%)",
+    backColor: "linear-gradient(to top, #525659 40%, #424040 100%)",
     backR: 100,
     frontR: 40,
     distanceX: null,
     distanceY: null,
   };
-  const joystick = new MyJoystick(jsconf);
+  const joystick = new MyJoystick(jsconf, IS_MOBILE);
   joystick.openJoystick(function (ev) {
     release_key('Up')
     release_key('Down')
@@ -249,3 +284,7 @@
     });
   }
 </script>
+</body>
+</html>
+
+
