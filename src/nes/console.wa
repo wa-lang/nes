@@ -5,7 +5,23 @@ global nes_RAM: []byte
 global Nes_Controller1: *Controller
 global Nes_Controller2: *Controller
 
-func InitConsole(romBytes: []byte) => error {
+func InitConsole(romid: int) => error {
+	romBytes: []byte
+	switch romid {
+		case 0:
+		romBytes = rom0[:]
+
+		case 1:
+		romBytes = rom1[:]
+
+		case 2:
+		romBytes = rom2[:]
+
+		case 3:
+		romBytes = rom3[:]
+	}
+
+	println("Rom:", romid)
 
 	err: error
 	err = LoadNESFile(romBytes)

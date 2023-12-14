@@ -20,17 +20,17 @@
       <div class="joy-right">
         <div class="game-name">Game Name</div>
         <select class="game-select">
-          <option value="1">坦克大战</option>
-          <option value="2">超级玛丽</option>
+          <option value="0">坦克大战</option>
+          <option value="1">超级玛丽</option>
+          <option value="2">公路赛车</option>
           <option value="3">魂斗罗</option>
-          <option value="4">双截龙</option>
         </select>
         <div class="bumper-right"></div>
         <div class="dpad-container">
-          <div class="dpad-x"></div>
+          <div id="X" class="dpad-x"></div>
           <div id="A" class="dpad-a"></div>
           <div id="B" class="dpad-b"></div>
-          <div class="dpad-y"></div>
+          <div id="Y" class="dpad-y"></div>
         </div>
       </div>
       <div class="screen-outer">
@@ -134,8 +134,7 @@
   const gameSelectDom = document.querySelector('.game-select');
   gameSelectDom.addEventListener('change', function (ev) {
     const value = ev.target.value;
-    console.log('xxx#value', value);
-    // 我在这里
+    app.NES_InitGame(parseInt(value));
   });
 
   {
@@ -154,6 +153,24 @@
     }, false);
     B.addEventListener("touchend", function(ev){
       release_key('B')
+    }, false);
+  }
+  {
+    let X = document.getElementById("X");
+    X.addEventListener("touchstart", function(ev){
+      press_key('X')
+    }, false);
+    X.addEventListener("touchend", function(ev){
+      release_key('X')
+    }, false);
+  }
+  {
+    let Y = document.getElementById("Y");
+    Y.addEventListener("touchstart", function(ev){
+      press_key('Y')
+    }, false);
+    Y.addEventListener("touchend", function(ev){
+      release_key('Y')
     }, false);
   }
   {
@@ -268,13 +285,21 @@
     app.init().then((result) => {
       app.main();
 
-      app.NES_InitGame();
+      app.NES_InitGame(0);
 
       let preTimeStamp;
       let stepAnima = function (timeStamp) {
         // 执行
-        btnA = get_key_status('A') && !btnA;
-        btnB = get_key_status('B') && !btnB;
+        if (get_key_status('X')){
+          btnA = !btnA
+        } else {
+          btnA = get_key_status('A');
+        }
+        if (get_key_status('Y')){
+          btnB = !btnB
+        } else {
+          btnB = get_key_status('B');
+        }
         btnSelect = get_key_status('Select');
         btnStart = get_key_status('Start');
         btnUp = get_key_status('Up')

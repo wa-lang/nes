@@ -13,10 +13,8 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"go/format"
 	"io/ioutil"
 	"os"
-	"unicode/utf8"
 )
 
 const pkgname = "nes"
@@ -25,7 +23,10 @@ var files = []struct {
 	Name string
 	File string
 }{
-	{"BattleCity_nes", "BattleCity.nes"},
+	{"rom0", "BattleCity.nes"},
+	{"rom1", "SuperMarioBros.nes"},
+	{"rom2", "GongLuSaiChe.nes"},
+	{"rom3", "HunDouLuo1_S_30.nes"},
 }
 
 func main() {
@@ -48,20 +49,21 @@ func makestatic() error {
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(buf, "const %s = ", fn.Name)
-		if utf8.Valid(b) {
-			fmt.Fprintf(buf, "`%s`", sanitize(b))
-		} else {
-			fmt.Fprintf(buf, "%q", b)
+		fmt.Fprintf(buf, "global %s = [...]byte{", fn.Name)
+		//if utf8.Valid(b) {
+		//	fmt.Fprintf(buf, "`%s`", sanitize(b))
+		//} else {
+		//	fmt.Fprintf(buf, "%q", b)
+		//}
+
+		fmt.Fprintf(buf, " ")
+		for _, v := range(b) {
+			fmt.Fprintf(buf, "%d, ", int(v))
 		}
-		fmt.Fprintln(buf, "\n")
+		fmt.Fprintf(buf, "}\n\n\n")
 	}
 
-	fmtbuf, err := format.Source(buf.Bytes())
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile("static.go", fmtbuf, 0666)
+	return ioutil.WriteFile("static.go", buf.Bytes(), 0666)
 }
 
 // sanitize prepares a valid UTF-8 string as a raw string constant.
