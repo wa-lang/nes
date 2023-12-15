@@ -130,8 +130,6 @@ global PPU_bufferedData: byte
 func PPU_initNesPPU() {
 	PPU_front = make([]u32, PPU_Frame_Width * PPU_Frame_Height)
 	PPU_back = make([]u32, PPU_Frame_Width * PPU_Frame_Height)
-	//PPU_front = image.NewRGBA(image.Rect(0, 0, 256 * 3, 240 * 3))
-	//PPU_back = image.NewRGBA(image.Rect(0, 0, 256 * 3, 240 * 3))
 	PPU_Reset()
 }
 
@@ -493,11 +491,6 @@ func PPU_renderPixel() {
 	}
 	c := Palette[PPU_readPalette(int(color))%64]
 	PPU_back[y * PPU_Frame_Width + x] = c
-	//PPU_back.SetRGBA(x, y, c)
-	//PPU_back.SetRGBA(x*2+0, y*2+0, c)
-	//PPU_back.SetRGBA(x*2+1, y*2+0, c)
-	//PPU_back.SetRGBA(x*2+0, y*2+1, c)
-	//PPU_back.SetRGBA(x*2+1, y*2+1, c)
 }
 
 func PPU_fetchSpritePattern(i, row: int) => uint32 {
