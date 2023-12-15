@@ -127,6 +127,18 @@
       press_key('Left');
     } else if (ev.direction === 'right') {
       press_key('Right');
+    } else if (ev.direction === 'left-up') {
+      press_key('Left');
+      press_key('Up')
+    } else if (ev.direction === 'right-up') {
+      press_key('Right');
+      press_key('Up');
+    } else if (ev.direction === 'left-down') {
+      press_key('Left');
+      press_key('Down');
+    } else if (ev.direction === 'right-down') {
+      press_key('Right');
+      press_key('Down');
     }
   });
 

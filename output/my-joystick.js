@@ -38,7 +38,7 @@ const MyJoystick = function (obj, isRotate = false) {
     this.ui.container.appendChild(this.ui.front);
 
     // 将 dom 元素添加至 body
-    const parentDom = document.querySelector('.analog')
+    const parentDom = document.querySelector(".analog");
     parentDom.appendChild(this.ui.container);
 
     this.stylizeUI();
@@ -218,7 +218,7 @@ const MyJoystick = function (obj, isRotate = false) {
       callback(this.callbackInfo);
     } else {
       // console.log("有效：", ev);
-      var dir = getDirectionByAngle(angle, this.isRotate);
+      var dir = getDirectionByAngle2(angle, this.isRotate);
       this.callbackInfo.direction = dir;
       this.callbackInfo.effective = true;
       callback(this.callbackInfo);
@@ -276,6 +276,36 @@ const MyJoystick = function (obj, isRotate = false) {
     } else if (angle < 45 && angle >= -45) {
       // this.tipText("右");
       direction = isRotate ? "up" : "right";
+    }
+    return direction;
+  };
+
+  const getDirectionByAngle2 = function (angle) {
+    var direction = "";
+    if (angle < -60 && angle >= -120) {
+      // this.tipText("上");
+      direction = isRotate ? "left" : "up";
+    } else if (angle < -150 || angle >= 150) {
+      // this.tipText("左");
+      direction = isRotate ? "down" : "left";
+    } else if (angle >= 60 && angle < 120) {
+      // this.tipText("下");
+      direction = isRotate ? "right" : "down";
+    } else if (angle < 30 && angle >= -30) {
+      // this.tipText("右");
+      direction = isRotate ? "up" : "right";
+    } else if (angle < -30 && angle >= -60) {
+      // this.tipText("右上");
+      direction = isRotate ? "left-up" : "right-up";
+    } else if (angle < -120 && angle >= -150) {
+      // this.tipText("左上");
+      direction = isRotate ? "left-down" : "left-up";
+    } else if (angle < 150 && angle >= 120) {
+      // this.tipText("左下");
+      direction = isRotate ? "right-down" : "left-down";
+    } else if (angle < 60 && angle >= 30) {
+      // this.tipText("右下");
+      direction = isRotate ? "right-up" : "right-down";
     }
     return direction;
   };
