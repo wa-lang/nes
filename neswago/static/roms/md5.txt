@@ -1,4 +1,0 @@
-MD5 (BattleCity.nes) = cd4fe2e78df0696dbe652f02c19541a1
-MD5 (GongLuSaiChe.nes) = 46e803dc82e031deaa765be3caca19d6
-MD5 (HunDouLuo1_S_30.nes) = f42f99e78f85f053ad9a236ca5491b49
-MD5 (SuperMarioBros.nes) = 7ef5350ccf52ca878a3c279365aacc5b
