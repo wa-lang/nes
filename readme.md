@@ -1,6 +1,8 @@
 # NES 模拟器 - 凹语言实现
 
-- 安装最新的凹语言编译器
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/wa-lang/nes)
+
+
 - 克隆仓库到本地，进入工程目录执行 `wa run`
 
 运行效果如下：
