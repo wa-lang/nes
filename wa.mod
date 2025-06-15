@@ -2,3 +2,4 @@
 
 name = "nes"
 pkgpath = "myapp"
+target = "js"
